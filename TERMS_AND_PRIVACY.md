@@ -62,7 +62,7 @@ The Bot collects and stores the following information:
 
 **User Information:**
 - User IDs of users who post detected scam images
-- Last detection timestamps
+- Detection timestamps
 
 **Content Information:**
 - Image hashes (perceptual hashes of images, not the actual images)
