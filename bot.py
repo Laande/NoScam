@@ -49,7 +49,10 @@ bot = Bot()
 
 @bot.event
 async def on_ready():
+    await bot.tree.sync()
     print(f'Bot connected as {bot.user}')
+    activity = discord.Activity(type=discord.ActivityType.watching, name="👀")
+    await bot.change_presence(activity=activity)
 
 @bot.event
 async def on_guild_join(guild):
