@@ -15,19 +15,6 @@ def get_welcome_embed(guild_name: str) -> discord.Embed:
     )
     
     embed.add_field(
-        name="Available Commands",
-        value=(
-            "Use `/help` to see all available commands and detailed information.\n\n"
-            "**Quick Start:**\n"
-            "`/add_hash` - Add a scam image hash\n"
-            "`/list_hashes` - View all hashes\n"
-            "`/set_action` - Configure automatic moderation\n"
-            "`/set_threshold` - Adjust detection sensitivity"
-        ),
-        inline=False
-    )
-    
-    embed.add_field(
         name="Next Steps",
         value=(
             "Use `/help` to see all available commands and detailed information.\n\n"

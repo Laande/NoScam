@@ -8,7 +8,6 @@ from src.config import MAX_HASHES_DISPLAY, GITHUB_IMAGES_BASE_URL
 
 
 def setup_hash_commands(tree, bot, db):
-    # Autocomplétion pour les hashes serveur
     async def hash_autocomplete(
         interaction: discord.Interaction,
         current: str,
@@ -29,7 +28,6 @@ def setup_hash_commands(tree, bot, db):
             for h in matches
         ]
 
-    # Autocomplétion pour les false positives (dynamique selon l'action)
     async def false_positive_autocomplete(
         interaction: discord.Interaction,
         current: str,
