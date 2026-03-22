@@ -57,10 +57,22 @@ async def on_ready():
 @bot.event
 async def on_guild_join(guild):
     try:
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite(view_channel=False),
+            guild.me: discord.PermissionOverwrite(
+                view_channel=True,
+                send_messages=True,
+                embed_links=True,
+                attach_files=True,
+                read_message_history=True
+            )
+        }
+        
         channel = await guild.create_text_channel(
             name='scam-reports',
             topic='Automatic scam image detection reports',
-            reason='Scam Detector Bot setup'
+            reason='Scam Detector Bot setup',
+            overwrites=overwrites
         )
         
         guild_id = str(guild.id)
