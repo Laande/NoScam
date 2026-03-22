@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scam Detector Bot - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 1em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .hash-code {
+            font-family: 'Courier New', monospace;
+            background: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        
+        .guild-id {
+            font-family: 'Courier New', monospace;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .timestamp {
+            color: #999;
+            font-size: 0.9em;
+        }
+        
+        .no-data {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-style: italic;
+        }
+        
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Scam Detector Bot</h1>
+        </header>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.total_servers }}</div>
+                <div class="stat-label">Total Servers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.total_detections }}</div>
+                <div class="stat-label">Total Detections</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.total_server_hashes }}</div>
+                <div class="stat-label">Server Hashes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.total_false_positives }}</div>
+                <div class="stat-label">False Positives</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>📊 Hashes per Server</h2>
+            {% if stats.hashes_per_server %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Server ID</th>
+                        <th>Hash Count</th>
+                        <th>False positive</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for server in stats.hashes_per_server %}
+                    <tr>
+                        <td><span class="guild-id">{{ server.guild_id }}</span></td>
+                        <td>{{ server.hash_count }}</td>
+                        <td>{{ server.fp_count if server.fp_count is not none else 'None' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="no-data">No server hashes yet</p>
+            {% endif %}
+        </div>
+        
+        <div class="section">
+            <h2>🔥 Top Servers by Detections</h2>
+            {% if stats.top_servers %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Server ID</th>
+                        <th>Detection Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for server in stats.top_servers %}
+                    <tr>
+                        <td><span class="guild-id">{{ server.guild_id }}</span></td>
+                        <td>{{ server.count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="no-data">No detections yet</p>
+            {% endif %}
+        </div>
+        
+        <div class="section">
+            <h2>🚨 Most Detected Hashes</h2>
+            {% if stats.top_hashes %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Hash</th>
+                        <th>Detection Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hash in stats.top_hashes %}
+                    <tr>
+                        <td><span class="hash-code">{{ hash.hash }}</span></td>
+                        <td>{{ hash.count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="no-data">No detections yet</p>
+            {% endif %}
+        </div>
+        
+        <div class="section">
+            <h2>⏱️ Recent Detections</h2>
+            {% if stats.recent_detections %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Server ID</th>
+                        <th>User ID</th>
+                        <th>Hash</th>
+                        <th>Detected At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detection in stats.recent_detections %}
+                    <tr>
+                        <td><span class="guild-id">{{ detection.guild_id }}</span></td>
+                        <td><span class="guild-id">{{ detection.user_id }}</span></td>
+                        <td><span class="hash-code">{{ detection.hash }}</span></td>
+                        <td><span class="timestamp">{{ detection.detected_at }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="no-data">No recent detections</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
