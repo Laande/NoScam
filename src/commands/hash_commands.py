@@ -125,23 +125,24 @@ def setup_hash_commands(tree, bot, db):
         except Exception as e:
             await interaction.followup.send(f"❌ Error: {e}")
 
-    @tree.command(name="list_hashes", description="List all hashes and false positives for this server")
+    @tree.command(name="list_hashes", description="List all hashes for this server")
     @app_commands.default_permissions(administrator=True)
     async def list_hashes(interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         guild_id = str(interaction.guild.id)
-        server_hashes = await db.get_server_hashes(guild_id)
+        
+        server_config = await db.get_server_config(guild_id)
+        use_global = server_config.get('use_global_hashes', 1) == 1 if server_config else True
+        
+        all_hashes = await db.get_all_hashes(guild_id)
         false_positives = await db.get_false_positives(guild_id)
         
         global_hashes = db.get_global_hashes()
         global_hash_dict = {h['hash']: h for h in global_hashes}
 
-        fp_hashes = {fp['hash'] for fp in false_positives}
-        active_hashes = [
-            h for h in server_hashes if h['hash'] not in fp_hashes]
-
-        if not active_hashes and not false_positives:
-            await interaction.followup.send("❌ No hashes or false positives registered for this server.")
+        if not all_hashes and not false_positives:
+            status = "enabled" if use_global else "disabled"
+            await interaction.followup.send(f"❌ No hashes registered for this server.\n_Global hashes are {status}_")
             return
 
         embed = discord.Embed(
@@ -149,9 +150,9 @@ def setup_hash_commands(tree, bot, db):
             color=discord.Color.blue()
         )
 
-        if active_hashes:
+        if all_hashes:
             hash_list = []
-            for i, item in enumerate(active_hashes[:MAX_HASHES_DISPLAY], 1):
+            for i, item in enumerate(all_hashes[:MAX_HASHES_DISPLAY], 1):
                 desc = item.get('description', 'No description')
                 hash_value = item['hash']
                 
@@ -167,15 +168,15 @@ def setup_hash_commands(tree, bot, db):
                     hash_list.append(f"`{hash_value}`\n└ {desc}")
 
             embed.add_field(
-                name=f"🚨 Active Scam Hashes ({len(active_hashes)})",
+                name=f"🚨 Active Scam Hashes ({len(all_hashes)})",
                 value="\n\n".join(hash_list) if hash_list else "None",
                 inline=False
             )
 
-            if len(active_hashes) > MAX_HASHES_DISPLAY:
+            if len(all_hashes) > MAX_HASHES_DISPLAY:
                 embed.add_field(
                     name="",
-                    value=f"_Showing {MAX_HASHES_DISPLAY}/{len(active_hashes)} active hashes_",
+                    value=f"_Showing {MAX_HASHES_DISPLAY}/{len(all_hashes)} active hashes_",
                     inline=False
                 )
 
@@ -207,8 +208,6 @@ def setup_hash_commands(tree, bot, db):
                     value=f"_Showing {MAX_HASHES_DISPLAY}/{len(false_positives)} false positives_",
                     inline=False
                 )
-        
-        embed.set_footer(text="🌐 = Global hash (click to view image)")
 
         await interaction.followup.send(embed=embed)
 
