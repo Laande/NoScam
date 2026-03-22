@@ -1,0 +1,29 @@
+{
+  "_comment": "Global scam image hashes database",
+  "_info": {
+    "description": "This file contains hashes of known scam images",
+    "note": "Configure GITHUB_IMAGES_BASE_URL in src/config.py to enable image links"
+  },
+  "hashes": [
+    {
+      "hash": "e1e140407f303e20",
+      "description": "X MrBeast Crypto Scam",
+      "image_path": "1.jpg"
+    },
+    {
+      "hash": "f03820ae23282a0a",
+      "description": "Active Code Bonus",
+      "image_path": "2.jpg"
+    },
+    {
+      "hash": "f06000000f0f0f00",
+      "description": "Withdrawal Success",
+      "image_path": "3.jpg"
+    },
+    {
+      "hash": "00000f3f0f0f0f07",
+      "description": "Phone Withdrawal",
+      "image_path": "4.jpg"
+    }
+  ]
+}
