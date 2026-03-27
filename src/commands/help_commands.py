@@ -6,7 +6,7 @@ def setup_help_commands(tree, bot, db):
     @tree.command(name="help", description="Show all available commands and information")
     async def help_command(interaction: discord.Interaction):
         embed = discord.Embed(
-            title="🛡️ Scam Detector Bot - Help",
+            title="Scam Detector",
             description="Automatic scam image detection and moderation bot",
             color=discord.Color.blue()
         )
@@ -48,7 +48,7 @@ def setup_help_commands(tree, bot, db):
         )
         
         embed.add_field(
-            name="🎯 Available Actions",
+            name="Available Actions",
             value=(
                 "• **None** - Report only, no automatic action\n"
                 "• **Delete** - Delete the message (default)\n"
