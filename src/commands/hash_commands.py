@@ -72,7 +72,7 @@ def setup_hash_commands(tree, bot, db):
     )
     @app_commands.default_permissions(administrator=True)
     async def add_hash(interaction: discord.Interaction, image_url: str, description: str = None):
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer()
 
         try:
             async with bot.session.get(image_url) as resp:
@@ -98,7 +98,7 @@ def setup_hash_commands(tree, bot, db):
     
     @tree.command(name="get_hash", description="Calculate the hash of an image")
     @app_commands.describe(image_url="Image URL to calculate hash from")
-    @app_commands.default_permissions(administrator=True)
+    @app_commands.default_permissions(moderate_members=True)
     async def get_hash(interaction: discord.Interaction, image_url: str):
         await interaction.response.defer(ephemeral=True)
         
@@ -126,7 +126,7 @@ def setup_hash_commands(tree, bot, db):
             await interaction.followup.send(f"❌ Error: {e}")
 
     @tree.command(name="list_hashes", description="List all hashes for this server")
-    @app_commands.default_permissions(administrator=True)
+    @app_commands.default_permissions(moderate_members=True)
     async def list_hashes(interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         guild_id = str(interaction.guild.id)
@@ -216,7 +216,7 @@ def setup_hash_commands(tree, bot, db):
     @app_commands.autocomplete(hash_value=hash_autocomplete)
     @app_commands.default_permissions(administrator=True)
     async def remove_hash(interaction: discord.Interaction, hash_value: str):
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer()
         guild_id = str(interaction.guild.id)
         success = await db.delete_server_hash(guild_id, hash_value)
 
@@ -284,7 +284,7 @@ def setup_hash_commands(tree, bot, db):
     @app_commands.autocomplete(hash_value=false_positive_autocomplete)
     @app_commands.default_permissions(administrator=True)
     async def false_positive(interaction: discord.Interaction, action: app_commands.Choice[str], hash_value: str):
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer()
         guild_id = str(interaction.guild.id)
 
         if action.value == "add":

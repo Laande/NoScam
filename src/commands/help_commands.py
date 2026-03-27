@@ -12,11 +12,9 @@ def setup_help_commands(tree, bot, db):
         )
         
         embed.add_field(
-            name="📋 Hash Management",
+            name="📋 Hash Management (Admin)",
             value=(
-                "`/get_hash` - Calculate the hash of an image\n"
                 "`/add_hash` - Add a scam image hash to your server\n"
-                "`/list_hashes` - View all hashes and false positives\n"
                 "`/remove_hash` - Remove a hash from your server\n"
                 "`/false_positive` - Mark/unmark a hash as false positive\n"
                 "`/export_hashes` - Export your hashes to JSON\n"
@@ -26,14 +24,25 @@ def setup_help_commands(tree, bot, db):
         )
         
         embed.add_field(
-            name="⚙️ Configuration",
+            name="⚙️ Configuration (Admin)",
             value=(
                 "`/set_report_channel` - Set the channel for scam reports\n"
                 "`/set_action` - Configure automatic moderation action\n"
                 "`/set_threshold` - Adjust detection sensitivity (0-20)\n"
                 "`/toggle_global_hashes` - Enable/disable global hash database\n"
-                "`/scam_stats` - View detection statistics\n"
-                "`/user_reputation` - Check a user's detection history"
+                "`/delete_server_data` - Delete ALL server data"
+            ),
+            inline=False
+        )
+        
+        embed.add_field(
+            name="👮 Moderator Commands",
+            value=(
+                "`/get_hash` - Calculate the hash of an image\n"
+                "`/list_hashes` - View all hashes and false positives\n"
+                "`/hashes_stats` - View detection statistics\n"
+                "`/user_reputation` - Check a user's detection history\n"
+                "`/reset_user_hits` - Reset hit count for a user"
             ),
             inline=False
         )

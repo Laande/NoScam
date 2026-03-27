@@ -326,3 +326,26 @@ class Database:
                 skipped += 1
         
         return {'added': added, 'skipped': skipped}
+    
+    async def reset_user_hits(self, guild_id: str, user_id: str) -> bool:
+        async with self.get_connection() as conn:
+            cursor = await conn.execute('''
+                DELETE FROM user_reputation
+                WHERE guild_id = ? AND user_id = ?
+            ''', (guild_id, user_id))
+            
+            await conn.execute('''
+                DELETE FROM detections
+                WHERE guild_id = ? AND user_id = ?
+            ''', (guild_id, user_id))
+            
+            deleted = cursor.rowcount > 0
+        return deleted
+    
+    async def delete_all_server_data(self, guild_id: str):
+        async with self.get_connection() as conn:
+            await conn.execute('DELETE FROM server_config WHERE guild_id = ?', (guild_id,))
+            await conn.execute('DELETE FROM server_hashes WHERE guild_id = ?', (guild_id,))
+            await conn.execute('DELETE FROM detections WHERE guild_id = ?', (guild_id,))
+            await conn.execute('DELETE FROM false_positives WHERE guild_id = ?', (guild_id,))
+            await conn.execute('DELETE FROM user_reputation WHERE guild_id = ?', (guild_id,))

@@ -7,7 +7,7 @@ def setup_config_commands(tree, bot, db):
     @app_commands.describe(channel="The channel where reports will be sent")
     @app_commands.default_permissions(administrator=True)
     async def set_report_channel(interaction: discord.Interaction, channel: discord.TextChannel):
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer()
         guild_id = str(interaction.guild.id)
         await db.set_report_channel(guild_id, str(channel.id))
         await interaction.followup.send(f"✅ Report channel set to: {channel.mention}")
@@ -23,7 +23,7 @@ def setup_config_commands(tree, bot, db):
     ])
     @app_commands.default_permissions(administrator=True)
     async def set_action(interaction: discord.Interaction, action: app_commands.Choice[str]):
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer()
         guild_id = str(interaction.guild.id)
         await db.set_default_action(guild_id, action.value)
         await interaction.followup.send(f"✅ Automatic action set to: **{action.name}**")
@@ -32,7 +32,7 @@ def setup_config_commands(tree, bot, db):
     @app_commands.describe(threshold="Threshold (0-20, recommended: 5)")
     @app_commands.default_permissions(administrator=True)
     async def set_threshold(interaction: discord.Interaction, threshold: int):
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer()
         if threshold < 0 or threshold > 20:
             await interaction.followup.send("❌ Threshold must be between 0 and 20.")
             return
@@ -49,7 +49,7 @@ def setup_config_commands(tree, bot, db):
     ])
     @app_commands.default_permissions(administrator=True)
     async def toggle_global_hashes(interaction: discord.Interaction, enabled: app_commands.Choice[str]):
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer()
         guild_id = str(interaction.guild.id)
         use_global = enabled.value == "true"
         
@@ -62,9 +62,9 @@ def setup_config_commands(tree, bot, db):
         )
     
     @tree.command(name="hashes_stats", description="Show hashes detection statistics")
-    @app_commands.default_permissions(administrator=True)
+    @app_commands.default_permissions(moderate_members=True)
     async def scam_stats(interaction: discord.Interaction):
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer()
         guild_id = str(interaction.guild.id)
         stats = await db.get_stats(guild_id)
         server_config = await db.get_server_config(guild_id)
@@ -106,9 +106,9 @@ def setup_config_commands(tree, bot, db):
     
     @tree.command(name="user_reputation", description="Check a user's reputation")
     @app_commands.describe(user="The user to check")
-    @app_commands.default_permissions(administrator=True)
+    @app_commands.default_permissions(moderate_members=True)
     async def user_reputation(interaction: discord.Interaction, user: discord.Member):
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer()
         guild_id = str(interaction.guild.id)
         user_id = str(user.id)
         
@@ -134,3 +134,81 @@ def setup_config_commands(tree, bot, db):
             )
         
         await interaction.followup.send(embed=embed)
+
+    @tree.command(name="reset_user_hits", description="Reset the hit count for a specific user")
+    @app_commands.describe(user="The user to reset hits for")
+    @app_commands.default_permissions(moderate_members=True)
+    async def reset_user_hits(interaction: discord.Interaction, user: discord.Member):
+        await interaction.response.defer()
+        guild_id = str(interaction.guild.id)
+        user_id = str(user.id)
+        
+        success = await db.reset_user_hits(guild_id, user_id)
+        
+        if success:
+            await interaction.followup.send(f"✅ All detections and hits have been reset for {user.mention}")
+        else:
+            await interaction.followup.send(f"ℹ️ {user.mention} has no recorded hits to reset.")
+    
+    @tree.command(name="delete_server_data", description="⚠️ Delete ALL server data")
+    @app_commands.default_permissions(administrator=True)
+    async def delete_server_data(interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        
+        class ConfirmView(discord.ui.View):
+            def __init__(self):
+                super().__init__(timeout=60)
+                self.value = None
+            
+            @discord.ui.button(label="⚠️ Confirm Deletion", style=discord.ButtonStyle.danger)
+            async def confirm(self, button_interaction: discord.Interaction, button: discord.ui.Button):
+                class ConfirmModal(discord.ui.Modal, title="Confirm Data Deletion"):
+                    confirmation_text = discord.ui.TextInput(
+                        label="Type: delete all my data",
+                        placeholder="delete all my data",
+                        required=True,
+                        max_length=50
+                    )
+                    
+                    async def on_submit(self, modal_interaction: discord.Interaction):
+                        if self.confirmation_text.value.strip().lower() == "delete all my data":
+                            guild_id = str(modal_interaction.guild.id)
+                            await db.delete_all_server_data(guild_id)
+                            
+                            embed = discord.Embed(
+                                title="Server Data Deleted",
+                                description=("All server data has been permanently deleted"),
+                                color=discord.Color.red()
+                            )
+                            
+                            await modal_interaction.response.send_message(embed=embed)
+                        else:
+                            await modal_interaction.response.send_message(
+                                "❌ Confirmation text incorrect. Deletion cancelled.",
+                                ephemeral=True
+                            )
+                
+                await button_interaction.response.send_modal(ConfirmModal())
+            
+            @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
+            async def cancel(self, button_interaction: discord.Interaction, button: discord.ui.Button):
+                await button_interaction.response.send_message("✅ Deletion cancelled.", ephemeral=True)
+                self.stop()
+        
+        embed = discord.Embed(
+            title="⚠️ WARNING: Delete All Server Data",
+            description=(
+                "This action will **permanently delete**:\n\n"
+                "• Server configuration (report channel, actions, threshold)\n"
+                "• All custom hashes\n"
+                "• All detection history\n"
+                "• All user reputation data\n"
+                "• All false positives\n\n"
+                "**This action cannot be undone!**\n\n"
+                "Click the button below to confirm."
+            ),
+            color=discord.Color.red()
+        )
+        
+        view = ConfirmView()
+        await interaction.followup.send(embed=embed, view=view, ephemeral=True)

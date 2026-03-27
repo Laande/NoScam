@@ -68,6 +68,14 @@ async def on_guild_join(guild):
             )
         }
         
+        for role in guild.roles:
+            if role.permissions.moderate_members or role.permissions.manage_messages:
+                overwrites[role] = discord.PermissionOverwrite(
+                    view_channel=True,
+                    send_messages=False,
+                    read_message_history=True
+                )
+        
         channel = await guild.create_text_channel(
             name='scam-reports',
             topic='Automatic scam image detection reports',

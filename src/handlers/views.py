@@ -24,7 +24,7 @@ class ActionButtons(discord.ui.View):
         if member:
             try:
                 await member.timeout(discord.utils.utcnow() + timedelta(hours=1))
-                await interaction.response.send_message(f"✅ {member.mention} has been muted for 1 hour.", ephemeral=True)
+                await interaction.response.send_message(f"✅ {member.mention} has been muted for 1 hour.")
             except Exception as e:
                 await interaction.response.send_message(f"❌ Error: {e}", ephemeral=True)
         else:
@@ -38,7 +38,7 @@ class ActionButtons(discord.ui.View):
         if member:
             try:
                 await member.kick(reason="Scam image detected")
-                await interaction.response.send_message(f"✅ {member.name} has been kicked.", ephemeral=True)
+                await interaction.response.send_message(f"✅ {member.name} has been kicked.")
             except Exception as e:
                 await interaction.response.send_message(f"❌ Error: {e}", ephemeral=True)
         else:
@@ -52,7 +52,7 @@ class ActionButtons(discord.ui.View):
         if member:
             try:
                 await member.ban(reason="Scam image detected")
-                await interaction.response.send_message(f"✅ {member.name} has been banned.", ephemeral=True)
+                await interaction.response.send_message(f"✅ {member.name} has been banned.")
             except Exception as e:
                 await interaction.response.send_message(f"❌ Error: {e}", ephemeral=True)
         else:
@@ -67,10 +67,7 @@ class ActionButtons(discord.ui.View):
         )
         
         if success:
-            await interaction.response.send_message(
-                f"✅ Hash marked as false positive. It will no longer trigger detections on this server.",
-                ephemeral=True
-            )
+            await interaction.response.send_message(f"✅ Hash marked as false positive. It will no longer trigger detections on this server.")
             
             new_view = ActionButtons(
                 self.user_id, 
@@ -95,10 +92,7 @@ class ActionButtons(discord.ui.View):
         )
         
         if success:
-            await interaction.response.send_message(
-                f"✅ Hash removed from false positives. It will now trigger detections again.",
-                ephemeral=True
-            )
+            await interaction.response.send_message(f"✅ Hash removed from false positives. It will now trigger detections again.")
             
             new_view = ActionButtons(
                 self.user_id, 
