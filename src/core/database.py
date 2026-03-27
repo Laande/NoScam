@@ -209,10 +209,14 @@ class Database:
     
     async def increment_detection(self, guild_id: str, user_id: str, hash_value: str):
         async with self.get_connection() as conn:
+            now = datetime.now()
+            detection_time = now.isoformat()
+            reputation_time = now.strftime("%Y-%m-%d %H:%M")
+            
             await conn.execute('''
                 INSERT INTO detections (guild_id, user_id, hash, detected_at)
                 VALUES (?, ?, ?, ?)
-            ''', (guild_id, user_id, hash_value, datetime.now().isoformat()))
+            ''', (guild_id, user_id, hash_value, detection_time))
             
             await conn.execute('''
                 INSERT INTO user_reputation (guild_id, user_id, detection_count, last_detection)
@@ -220,7 +224,7 @@ class Database:
                 ON CONFLICT(guild_id, user_id) DO UPDATE SET
                     detection_count = detection_count + 1,
                     last_detection = ?
-            ''', (guild_id, user_id, datetime.now().isoformat(), datetime.now().isoformat(" ", "minutes")))
+            ''', (guild_id, user_id, reputation_time, reputation_time))
     
     async def get_detection_stats(self, guild_id: str) -> Dict:
         async with self.get_connection() as conn:
