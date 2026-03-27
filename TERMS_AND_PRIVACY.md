@@ -95,16 +95,28 @@ Global hash database may be shared across servers to improve scam detection, but
 ### 5. Data Retention
 
 - Server configurations are retained while the Bot is active in your server
-- Detection logs are retained indefinitely for statistical purposes
-- Upon removing the Bot from your server, you may request data deletion
+- Detection logs are retained indefinitely for statistical purposes unless deleted
+- Server administrators can delete ALL server data at any time using the `/delete_server_data` command
+- Data deletion is permanent and irreversible
 
 ### 6. User Rights
 
 Server administrators have the right to:
 - Request a copy of their server's data (via `/export_hashes`)
-- Request deletion of their server's data
-- Opt-out of global hash usage (via `/config use_global_hashes`)
+- Request deletion of their server's data (via `/delete_server_data` command)
+- Opt-out of global hash usage (via `/toggle_global_hashes`)
 - Manage false positives
+
+**Data Deletion:**
+- Server administrators can permanently delete ALL server data using the `/delete_server_data` command
+- This action is IRREVERSIBLE and will delete:
+  - Server configuration (report channel, actions, threshold)
+  - All custom hashes
+  - All detection history
+  - All user reputation data
+  - All false positives
+- A confirmation process is required to prevent accidental deletion
+- Once deleted, this data cannot be recovered
 
 ### 7. Security
 
