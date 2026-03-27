@@ -80,4 +80,9 @@ async def send_scam_report(bot, db, message, match, distance, image_file, messag
     embed.set_footer(text=f"Hash: {match['hash']}")
     
     view = ActionButtons(message.author.id, message.guild.id, match['hash'], bot, db, is_false_positive=is_fp)
-    await report_channel.send(embed=embed, file=image_file, view=view)
+    
+    try:
+        await report_channel.send(embed=embed, file=image_file, view=view)
+    except discord.Forbidden:
+        # Channel deleted, or missings perms
+        pass

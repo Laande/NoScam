@@ -105,46 +105,59 @@ async def on_message(message):
     if message.author.bot:
         return
     
+    image_urls = []
+    
     if message.attachments:
         image_attachments = [
             att for att in message.attachments
             if att.content_type and att.content_type.startswith('image/')
         ]
-        if image_attachments:
-            result = await check_images_for_scam(message, image_attachments, bot.session, bot.db)
+        image_urls.extend([att.url for att in image_attachments])
+    
+    if message.embeds:
+        for embed in message.embeds:
+            if embed.type == 'image' and embed.url:
+                image_urls.append(embed.url)
+            if embed.image and embed.image.url:
+                image_urls.append(embed.image.url)
+            if embed.thumbnail and embed.thumbnail.url:
+                image_urls.append(embed.thumbnail.url)
+    
+    if image_urls:
+        result = await check_images_for_scam(message, image_urls, bot.session, bot.db)
+        
+        if result['detected']:
+            guild_id = str(message.guild.id)
+            user_id = str(message.author.id)
+            server_config = await bot.db.get_server_config(guild_id)
+            action = server_config['default_action'] if server_config and server_config['default_action'] else DEFAULT_ACTION
             
-            if result['detected']:
-                guild_id = str(message.guild.id)
-                user_id = str(message.author.id)
-                server_config = await bot.db.get_server_config(guild_id)
-                action = server_config['default_action'] if server_config and server_config['default_action'] else DEFAULT_ACTION
-                
-                await send_user_warning(message, action, message.guild.name)
-                
-                if action != 'none':
-                    try:
-                        await message.delete()
-                    except Exception:
-                        pass
-                
-                await send_scam_report(
-                    bot,
-                    bot.db,
-                    message,
-                    result['match'],
-                    result['distance'],
-                    result['image_file'],
-                    result['message_content'],
-                    result['message_jump_url']
-                )
-                
-                await detection_queue.put({
-                    'guild_id': guild_id,
-                    'user_id': user_id,
-                    'hash': result['match']['hash']
-                })
-                
-                await perform_auto_action(message.author, message.guild, action)
+            await send_user_warning(message, action, message.guild.name)
+            
+            if action != 'none':
+                try:
+                    await message.delete()
+                except Exception:
+                    pass
+            
+            await send_scam_report(
+                bot,
+                bot.db,
+                message,
+                result['match'],
+                result['distance'],
+                result['image_file'],
+                result['message_content'],
+                result['message_jump_url']
+            )
+            
+            await detection_queue.put({
+                'guild_id': guild_id,
+                'user_id': user_id,
+                'hash': result['match']['hash']
+            })
+            
+            await perform_auto_action(message.author, message.guild, action)
 
 if __name__ == '__main__':
     token = os.getenv('DISCORD_TOKEN')

@@ -19,7 +19,7 @@ async def process_detection_queue(db):
         except Exception as e:
             print(f"Error processing detection queue: {e}")
 
-async def check_images_for_scam(message, attachments, session, db):
+async def check_images_for_scam(message, image_urls, session, db):
     try:
         guild_id = str(message.guild.id)
         server_config = await db.get_server_config(guild_id)
@@ -29,29 +29,34 @@ async def check_images_for_scam(message, attachments, session, db):
         scam_detected = False
         match_info = None
         best_distance = float('inf')
-        flagged_attachment = None
+        flagged_url = None
         
-        for attachment in attachments:
-            async with session.get(attachment.url) as resp:
-                if resp.status != 200:
-                    continue
-                
-                image_bytes = await resp.read()
-                image_hash = calculate_image_hash(image_bytes)
-                match, distance = find_similar_hash(image_hash, all_hashes, threshold)
-                
-                if match:
-                    scam_detected = True
-                    if distance < best_distance:
-                        best_distance = distance
-                        match_info = match
-                        flagged_attachment = attachment
+        for url in image_urls:
+            try:
+                async with session.get(url) as resp:
+                    if resp.status != 200:
+                        continue
+                    
+                    image_bytes = await resp.read()
+                    image_hash = calculate_image_hash(image_bytes)
+                    match, distance = find_similar_hash(image_hash, all_hashes, threshold)
+                    
+                    if match:
+                        scam_detected = True
+                        if distance < best_distance:
+                            best_distance = distance
+                            match_info = match
+                            flagged_url = url
+            except Exception as e:
+                print(f"Error processing image URL {url}: {e}")
+                continue
         
         if scam_detected:
-            async with session.get(flagged_attachment.url) as img_resp:
+            async with session.get(flagged_url) as img_resp:
                 if img_resp.status == 200:
                     img_data = await img_resp.read()
-                    image_file = discord.File(io.BytesIO(img_data), filename=flagged_attachment.filename)
+                    filename = flagged_url.split('/')[-1] or 'image.jpg'
+                    image_file = discord.File(io.BytesIO(img_data), filename=filename)
             
             return {
                 'detected': True,
