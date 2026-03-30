@@ -1,10 +1,17 @@
 import imagehash
 from PIL import Image
 import io
+import warnings
 
 def calculate_image_hash(image_bytes):
-    image = Image.open(io.BytesIO(image_bytes))
-    return str(imagehash.average_hash(image))
+    try:
+        # Suppress PIL warnings about truncated files
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            image = Image.open(io.BytesIO(image_bytes))
+            return str(imagehash.average_hash(image))
+    except Exception as e:
+        raise ValueError(f"Failed to process image: {e}")
 
 def find_similar_hash(target_hash, hash_list, threshold=5):
     try:
