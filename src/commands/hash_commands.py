@@ -127,7 +127,7 @@ def setup_hash_commands(tree, bot, db):
             await interaction.followup.send(f"❌ Error: {e}", ephemeral=True)
 
     def format_embed(item, global_hash_dict):
-            desc = item.get('description', 'No description')
+            desc = item.get('description', '')
             hash_value = item['hash']
 
             if hash_value in global_hash_dict and GITHUB_IMAGES_BASE_URL:
@@ -135,11 +135,11 @@ def setup_hash_commands(tree, bot, db):
                 image_path = global_item.get('image_path', '')
                 if image_path:
                     image_url = GITHUB_IMAGES_BASE_URL + image_path
-                    return f"[`{hash_value}`]({image_url}) 🌐\n└ {desc}"
+                    return f"[`{hash_value}`]({image_url}) 🌐{f'\n└ {desc}' if desc else ''}"
                 else:
-                    return f"`{hash_value}` 🌐\n└ {desc}"
+                    return f"`{hash_value}` 🌐{f'\n└ {desc}' if desc else ''}"
             else:
-                return f"`{hash_value}`\n└ {desc}"
+                return f"`{hash_value}`{f'\n└ {desc}' if desc else ''}"
 
     @tree.command(name="list_hashes", description="List hashes for this server")
     @app_commands.describe(type="What to display (defaults to active hashes)")
