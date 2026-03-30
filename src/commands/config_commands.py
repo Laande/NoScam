@@ -34,7 +34,7 @@ def setup_config_commands(tree, bot, db):
     async def set_threshold(interaction: discord.Interaction, threshold: int):
         await interaction.response.defer()
         if threshold < 0 or threshold > 20:
-            await interaction.followup.send("❌ Threshold must be between 0 and 20.")
+            await interaction.followup.send("❌ Threshold must be between 0 and 20.", ephemeral=True)
             return
         
         guild_id = str(interaction.guild.id)

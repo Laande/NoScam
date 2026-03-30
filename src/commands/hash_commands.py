@@ -5,6 +5,7 @@ import json
 import io
 from src.core.image_hash import calculate_image_hash
 from src.config import MAX_HASHES_DISPLAY, GITHUB_IMAGES_BASE_URL
+from src.utils.pagination import EmbedPaginator, create_hash_embeds
 
 
 def setup_hash_commands(tree, bot, db):
@@ -77,7 +78,7 @@ def setup_hash_commands(tree, bot, db):
         try:
             async with bot.session.get(image_url) as resp:
                 if resp.status != 200:
-                    await interaction.followup.send("❌ Unable to download image.")
+                    await interaction.followup.send("❌ Unable to download image.", ephemeral=True)
                     return
 
                 image_bytes = await resp.read()
@@ -92,10 +93,10 @@ def setup_hash_commands(tree, bot, db):
                         msg += f"\nDescription: {description}"
                     await interaction.followup.send(msg)
                 else:
-                    await interaction.followup.send("❌ This hash already exists for this server.")
+                    await interaction.followup.send("❌ This hash already exists for this server.", ephemeral=True)
         except Exception as e:
-            await interaction.followup.send(f"❌ Error: {e}")
-    
+            await interaction.followup.send(f"❌ Error: {e}", ephemeral=True)
+
     @tree.command(name="get_hash", description="Calculate the hash of an image")
     @app_commands.describe(image_url="Image URL to calculate hash from")
     @app_commands.default_permissions(moderate_members=True)
@@ -105,7 +106,7 @@ def setup_hash_commands(tree, bot, db):
         try:
             async with bot.session.get(image_url) as resp:
                 if resp.status != 200:
-                    await interaction.followup.send("❌ Unable to download image.")
+                    await interaction.followup.send("❌ Unable to download image.", ephemeral=True)
                     return
                 
                 image_bytes = await resp.read()
@@ -123,11 +124,31 @@ def setup_hash_commands(tree, bot, db):
                 
                 await interaction.followup.send(embed=embed)
         except Exception as e:
-            await interaction.followup.send(f"❌ Error: {e}")
+            await interaction.followup.send(f"❌ Error: {e}", ephemeral=True)
 
-    @tree.command(name="list_hashes", description="List all hashes for this server")
+    def format_embed(item, global_hash_dict):
+            desc = item.get('description', 'No description')
+            hash_value = item['hash']
+
+            if hash_value in global_hash_dict and GITHUB_IMAGES_BASE_URL:
+                global_item = global_hash_dict[hash_value]
+                image_path = global_item.get('image_path', '')
+                if image_path:
+                    image_url = GITHUB_IMAGES_BASE_URL + image_path
+                    return f"[`{hash_value}`]({image_url}) 🌐\n└ {desc}"
+                else:
+                    return f"`{hash_value}` 🌐\n└ {desc}"
+            else:
+                return f"`{hash_value}`\n└ {desc}"
+
+    @tree.command(name="list_hashes", description="List hashes for this server")
+    @app_commands.describe(type="What to display (defaults to active hashes)")
+    @app_commands.choices(type=[
+        app_commands.Choice(name="Active Hashes Only", value="active"),
+        app_commands.Choice(name="False Positives Only", value="false_positives")
+    ])
     @app_commands.default_permissions(moderate_members=True)
-    async def list_hashes(interaction: discord.Interaction):
+    async def list_hashes(interaction: discord.Interaction, type: str = "active"):
         await interaction.response.defer(ephemeral=True)
         guild_id = str(interaction.guild.id)
         
@@ -145,71 +166,43 @@ def setup_hash_commands(tree, bot, db):
             await interaction.followup.send(f"❌ No hashes registered for this server.\n_Global hashes are {status}_")
             return
 
-        embed = discord.Embed(
-            title=f"📋 Hash Management - {interaction.guild.name}",
-            color=discord.Color.blue()
-        )
-
-        if all_hashes:
-            hash_list = []
-            for i, item in enumerate(all_hashes[:MAX_HASHES_DISPLAY], 1):
-                desc = item.get('description', 'No description')
-                hash_value = item['hash']
-                
-                if hash_value in global_hash_dict and GITHUB_IMAGES_BASE_URL:
-                    global_item = global_hash_dict[hash_value]
-                    image_path = global_item.get('image_path', '')
-                    if image_path:
-                        image_url = GITHUB_IMAGES_BASE_URL + image_path
-                        hash_list.append(f"[`{hash_value}`]({image_url}) 🌐\n└ {desc}")
-                    else:
-                        hash_list.append(f"`{hash_value}` 🌐\n└ {desc}")
-                else:
-                    hash_list.append(f"`{hash_value}`\n└ {desc}")
-
-            embed.add_field(
-                name=f"🚨 Active Scam Hashes ({len(all_hashes)})",
-                value="\n\n".join(hash_list) if hash_list else "None",
-                inline=False
+        embed = []
+        if all_hashes and type == "active":
+            embed = create_hash_embeds(
+                title="🚨 Active Scam Hashes",
+                items=all_hashes[:MAX_HASHES_DISPLAY],
+                global_hash=global_hash_dict,
+                items_per_page=8,
+                description_func=format_embed,
+                color=discord.Color.red()
             )
 
-            if len(all_hashes) > MAX_HASHES_DISPLAY:
-                embed.add_field(
-                    name="",
-                    value=f"_Showing {MAX_HASHES_DISPLAY}/{len(all_hashes)} active hashes_",
-                    inline=False
-                )
-
-        if false_positives:
-            fp_list = []
-            for i, item in enumerate(false_positives[:MAX_HASHES_DISPLAY], 1):
-                hash_value = item['hash']
-                
-                if hash_value in global_hash_dict and GITHUB_IMAGES_BASE_URL:
-                    global_item = global_hash_dict[hash_value]
-                    image_path = global_item.get('image_path', '')
-                    if image_path:
-                        image_url = GITHUB_IMAGES_BASE_URL + image_path
-                        fp_list.append(f"[`{hash_value}`]({image_url}) 🌐")
-                    else:
-                        fp_list.append(f"`{hash_value}` 🌐")
-                else:
-                    fp_list.append(f"`{hash_value}`")
-
-            embed.add_field(
-                name=f"✅ False Positives ({len(false_positives)})",
-                value="\n".join(fp_list) if fp_list else "None",
-                inline=False
+        elif false_positives and type == "false_positives":
+            embed = create_hash_embeds(
+                title="✅ False Positives",
+                items=(false_positives[:MAX_HASHES_DISPLAY]),
+                global_hash=global_hash_dict,
+                items_per_page=8,
+                description_func=format_embed,
+                color=discord.Color.green()
             )
 
-            if len(false_positives) > MAX_HASHES_DISPLAY:
-                embed.add_field(
-                    name="",
-                    value=f"_Showing {MAX_HASHES_DISPLAY}/{len(false_positives)} false positives_",
-                    inline=False
-                )
+        else:
+            embed = discord.Embed(
+                description="No hashes to display.",
+                color=discord.Color.blue()
+            )
+        
+        if len(embed) == 1:
+            await interaction.followup.send(embed=embed[0])
+        else:
+            paginator = EmbedPaginator(embed)
+            view = paginator.get_view()
 
-        await interaction.followup.send(embed=embed)
+            view.previous_button.disabled = not paginator.has_previous()
+            view.next_button.disabled = not paginator.has_next()
+
+            await interaction.followup.send(embed=paginator.get_current_embed(), view=view)
 
     @tree.command(name="remove_hash", description="Remove a hash from this server")
     @app_commands.describe(hash_value="The hash to remove")
@@ -223,7 +216,7 @@ def setup_hash_commands(tree, bot, db):
         if success:
             await interaction.followup.send(f"✅ Hash `{hash_value}` removed.")
         else:
-            await interaction.followup.send("❌ Hash not found.")
+            await interaction.followup.send("❌ Hash not found.", ephemeral=True)
 
     @tree.command(name="export_hashes", description="Export server hashes to JSON")
     @app_commands.default_permissions(administrator=True)
@@ -252,7 +245,7 @@ def setup_hash_commands(tree, bot, db):
         await interaction.response.defer(ephemeral=True)
 
         if not file.filename.endswith('.json'):
-            await interaction.followup.send("❌ File must be a JSON file.")
+            await interaction.followup.send("❌ File must be a JSON file.", ephemeral=True)
             return
 
         try:
@@ -268,9 +261,9 @@ def setup_hash_commands(tree, bot, db):
                 f"Skipped (duplicates): {result['skipped']}"
             )
         except json.JSONDecodeError:
-            await interaction.followup.send("❌ Invalid JSON file.")
+            await interaction.followup.send("❌ Invalid JSON file.", ephemeral=True)
         except Exception as e:
-            await interaction.followup.send(f"❌ Error: {e}")
+            await interaction.followup.send(f"❌ Error: {e}", ephemeral=True)
 
     @tree.command(name="false_positive", description="Manage false positives")
     @app_commands.describe(
@@ -292,10 +285,10 @@ def setup_hash_commands(tree, bot, db):
             if success:
                 await interaction.followup.send(f"✅ Hash `{hash_value}` marked as false positive.")
             else:
-                await interaction.followup.send("❌ This hash is already marked as a false positive.")
+                await interaction.followup.send("❌ This hash is already marked as a false positive.", ephemeral=True)
         else:
             success = await db.remove_false_positive(guild_id, hash_value)
             if success:
                 await interaction.followup.send(f"✅ Hash `{hash_value}` removed from false positives.")
             else:
-                await interaction.followup.send("❌ Hash not found in false positives.")
+                await interaction.followup.send("❌ Hash not found in false positives.", ephemeral=True)

@@ -79,10 +79,7 @@ class ActionButtons(discord.ui.View):
             )
             await interaction.message.edit(view=new_view)
         else:
-            await interaction.response.send_message(
-                "❌ This hash is already marked as a false positive.",
-                ephemeral=True
-            )
+            await interaction.response.send_message("❌ This hash is already marked as a false positive.", ephemeral=True)
     
     @discord.ui.button(label="Mark as Scam", style=discord.ButtonStyle.danger, emoji="⚠️", row=1)
     async def mark_as_scam_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -104,7 +101,4 @@ class ActionButtons(discord.ui.View):
             )
             await interaction.message.edit(view=new_view)
         else:
-            await interaction.response.send_message(
-                "❌ This hash is not in the false positives list.",
-                ephemeral=True
-            )
+            await interaction.response.send_message("❌ This hash is not in the false positives list.", ephemeral=True)
