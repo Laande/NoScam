@@ -191,9 +191,8 @@ def setup_hash_commands(tree, bot, db):
             embed = discord.Embed(
                 description="No hashes to display.",
                 color=discord.Color.blue()
-                await interaction.followup.send(embed=embed)
-                return
             )
+            return await interaction.followup.send(embed=embed)
         
         if len(embed) == 1:
             await interaction.followup.send(embed=embed[0])
