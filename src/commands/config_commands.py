@@ -61,7 +61,7 @@ def setup_config_commands(tree, bot, db):
             f"{'The bot will now use both global and server-specific hashes.' if use_global else 'The bot will now only use server-specific hashes.'}"
         )
     
-    @tree.command(name="hashes_stats", description="Show hashes detection statistics")
+    @tree.command(name="info", description="Show informations about the server's configuration and statistics")
     @app_commands.default_permissions(moderate_members=True)
     async def scam_stats(interaction: discord.Interaction):
         await interaction.response.defer()
@@ -71,7 +71,7 @@ def setup_config_commands(tree, bot, db):
         detection_stats = await db.get_detection_stats(guild_id)
         
         embed = discord.Embed(
-            title="📊 Hashes Statistics",
+            title="📊 Server Configuration & Statistics",
             color=discord.Color.blue()
         )
         
@@ -164,14 +164,14 @@ def setup_config_commands(tree, bot, db):
             async def confirm(self, button_interaction: discord.Interaction, button: discord.ui.Button):
                 class ConfirmModal(discord.ui.Modal, title="Confirm Data Deletion"):
                     confirmation_text = discord.ui.TextInput(
-                        label="Type: delete all my data",
-                        placeholder="delete all my data",
+                        label="Type: delete all server data",
+                        placeholder="delete all server data",
                         required=True,
                         max_length=50
                     )
                     
                     async def on_submit(self, modal_interaction: discord.Interaction):
-                        if self.confirmation_text.value.strip().lower() == "delete all my data":
+                        if self.confirmation_text.value.strip().lower() == "delete all server data":
                             guild_id = str(modal_interaction.guild.id)
                             await db.delete_all_server_data(guild_id)
                             
