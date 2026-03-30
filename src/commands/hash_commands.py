@@ -180,7 +180,7 @@ def setup_hash_commands(tree, bot, db):
         elif false_positives and type == "false_positives":
             embed = create_hash_embeds(
                 title="✅ False Positives",
-                items=(false_positives[:MAX_HASHES_DISPLAY]),
+                items=false_positives[:MAX_HASHES_DISPLAY],
                 global_hash=global_hash_dict,
                 items_per_page=8,
                 description_func=format_embed,
