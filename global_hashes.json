@@ -1,9 +1,4 @@
 {
-  "_comment": "Global scam image hashes database",
-  "_info": {
-    "description": "This file contains hashes of known scam images",
-    "note": "Configure GITHUB_IMAGES_BASE_URL in src/config.py to enable image links"
-  },
   "hashes": [
     {
       "hash": "e1e140407f303e20",
@@ -24,6 +19,27 @@
       "hash": "00000f3f0f0f0f07",
       "description": "Phone Withdrawal",
       "image_path": "4.jpg"
+    },
+
+    {
+      "hash": "ffff300000003c18",
+      "description": "X Donald Trump Crypto Scam",
+      "image_path": "5.jpg"
+    },
+    {
+      "hash": "ffff000000838010",
+      "description": "America Bonus",
+      "image_path": "6.jpg"
+    },
+    {
+      "hash": "ffff000000030303",
+      "description": "Withdrawal",
+      "image_path": "7.jpg"
+    },
+    {
+      "hash": "00000f3f2f0f0f0f",
+      "description": "Phone Withdrawal",
+      "image_path": "8.jpg"
     }
   ]
 }
