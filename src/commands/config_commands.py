@@ -69,6 +69,7 @@ def setup_config_commands(tree, bot, db):
         stats = await db.get_stats(guild_id)
         server_config = await db.get_server_config(guild_id)
         detection_stats = await db.get_detection_stats(guild_id)
+        false_positives = await db.get_false_positives(guild_id)
         
         embed = discord.Embed(
             title="📊 Server Configuration & Statistics",
@@ -77,8 +78,9 @@ def setup_config_commands(tree, bot, db):
         
         embed.add_field(name="Global Hashes", value=f"{stats['global_count']}", inline=True)
         embed.add_field(name="Server Hashes", value=f"{stats['server_count']}", inline=True)
-        embed.add_field(name="Total Hashes", value=f"{stats['total']}", inline=True)
+        embed.add_field(name="False Positives", value=f"{len(false_positives)}", inline=True)
         
+        embed.add_field(name="Total Hashes", value=f"{stats['total']}", inline=True)
         embed.add_field(name="Total Detections", value=f"{detection_stats['total_detections']}", inline=True)
         
         if server_config:
@@ -86,7 +88,7 @@ def setup_config_commands(tree, bot, db):
             embed.add_field(name="Auto Action", value=f"{server_config['default_action']}", inline=True)
             
             global_status = "✅ Enabled" if server_config.get('use_global_hashes', 1) == 1 else "❌ Disabled"
-            embed.add_field(name="Global Hashes", value=global_status, inline=True)
+            embed.add_field(name="Global Hashes Status", value=global_status, inline=True)
             
             if server_config['report_channel_id']:
                 channel = bot.get_channel(int(server_config['report_channel_id']))
