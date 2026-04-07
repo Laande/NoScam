@@ -10,6 +10,7 @@ def setup_config_commands(tree, bot, db):
         await interaction.response.defer()
         guild_id = str(interaction.guild.id)
         await db.set_report_channel(guild_id, str(channel.id))
+        bot.invalidate_config_cache(guild_id)
         await interaction.followup.send(f"✅ Report channel set to: {channel.mention}")
     
     @tree.command(name="set_action", description="Set the automatic action on detection")
@@ -26,6 +27,7 @@ def setup_config_commands(tree, bot, db):
         await interaction.response.defer()
         guild_id = str(interaction.guild.id)
         await db.set_default_action(guild_id, action.value)
+        bot.invalidate_config_cache(guild_id)
         await interaction.followup.send(f"✅ Automatic action set to: **{action.name}**")
     
     @tree.command(name="set_threshold", description="Set the tolerance threshold for hash comparison")
@@ -39,6 +41,7 @@ def setup_config_commands(tree, bot, db):
         
         guild_id = str(interaction.guild.id)
         await db.set_hash_threshold(guild_id, threshold)
+        bot.invalidate_config_cache(guild_id)
         await interaction.followup.send(f"✅ Threshold set to: **{threshold}**")
     
     @tree.command(name="toggle_global_hashes", description="Enable or disable global hash database")
@@ -54,6 +57,7 @@ def setup_config_commands(tree, bot, db):
         use_global = enabled.value == "true"
         
         await db.set_use_global_hashes(guild_id, use_global)
+        bot.invalidate_config_cache(guild_id)
         
         status = "enabled" if use_global else "disabled"
         await interaction.followup.send(
@@ -74,6 +78,7 @@ def setup_config_commands(tree, bot, db):
         scan_bots = enabled.value == "true"
         
         await db.set_scan_bot_messages(guild_id, scan_bots)
+        bot.invalidate_config_cache(guild_id)
         
         status = "enabled" if scan_bots else "disabled"
         await interaction.followup.send(
@@ -199,6 +204,7 @@ def setup_config_commands(tree, bot, db):
                         if self.confirmation_text.value.strip().lower() == "delete all server data":
                             guild_id = str(modal_interaction.guild.id)
                             await db.delete_all_server_data(guild_id)
+                            bot.invalidate_config_cache(guild_id)
                             
                             embed = discord.Embed(
                                 title="Server Data Deleted",

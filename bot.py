@@ -31,6 +31,10 @@ class Bot(discord.Client):
         self.server_config_cache = {}
         self.cache_ttl = 300
     
+    def invalidate_config_cache(self, guild_id: str):
+        if guild_id in self.server_config_cache:
+            del self.server_config_cache[guild_id]
+    
     async def setup_hook(self):
         await self.db.init_database()
         self.session = aiohttp.ClientSession()
