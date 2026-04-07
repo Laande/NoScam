@@ -28,7 +28,8 @@ class Database:
                     report_channel_id TEXT,
                     default_action TEXT DEFAULT 'delete',
                     hash_threshold INTEGER DEFAULT 5,
-                    use_global_hashes INTEGER DEFAULT 1
+                    use_global_hashes INTEGER DEFAULT 1,
+                    scan_bot_messages INTEGER DEFAULT 0
                 )
             ''')
             
@@ -81,7 +82,7 @@ class Database:
     async def get_server_config(self, guild_id: str) -> Optional[Dict]:
         async with self.get_connection() as conn:
             async with conn.execute('''
-                SELECT report_channel_id, default_action, hash_threshold, use_global_hashes
+                SELECT report_channel_id, default_action, hash_threshold, use_global_hashes, scan_bot_messages
                 FROM server_config WHERE guild_id = ?
             ''', (guild_id,)) as cursor:
                 result = await cursor.fetchone()
@@ -91,7 +92,8 @@ class Database:
                 'report_channel_id': result[0],
                 'default_action': result[1],
                 'hash_threshold': result[2],
-                'use_global_hashes': result[3] if result[3] is not None else 1
+                'use_global_hashes': result[3] if result[3] is not None else 1,
+                'scan_bot_messages': result[4] if result[4] is not None else 0
             }
         return None
     
@@ -126,6 +128,14 @@ class Database:
                 VALUES (?, ?)
                 ON CONFLICT(guild_id) DO UPDATE SET use_global_hashes = ?
             ''', (guild_id, 1 if use_global else 0, 1 if use_global else 0))
+    
+    async def set_scan_bot_messages(self, guild_id: str, scan_bots: bool):
+        async with self.get_connection() as conn:
+            await conn.execute('''
+                INSERT INTO server_config (guild_id, scan_bot_messages)
+                VALUES (?, ?)
+                ON CONFLICT(guild_id) DO UPDATE SET scan_bot_messages = ?
+            ''', (guild_id, 1 if scan_bots else 0, 1 if scan_bots else 0))
     
     async def add_server_hash(self, guild_id: str, hash_value: str, description: str = None) -> bool:
         try:

@@ -102,7 +102,11 @@ async def on_guild_join(guild):
 
 @bot.event
 async def on_message(message):
-    if message.author.bot:
+    guild_id = str(message.guild.id)
+    server_config = await bot.db.get_server_config(guild_id)
+    scan_bots = server_config.get('scan_bot_messages', 0) == 1 if server_config else False
+    
+    if message.author.bot and not scan_bots:
         return
     
     image_urls = []

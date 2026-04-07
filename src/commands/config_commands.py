@@ -61,6 +61,26 @@ def setup_config_commands(tree, bot, db):
             f"{'The bot will now use both global and server-specific hashes.' if use_global else 'The bot will now only use server-specific hashes.'}"
         )
     
+    @tree.command(name="toggle_scan_bots", description="Enable or disable scanning messages from bots")
+    @app_commands.describe(enabled="Enable or disable bot message scanning")
+    @app_commands.choices(enabled=[
+        app_commands.Choice(name="Enabled", value="true"),
+        app_commands.Choice(name="Disabled", value="false")
+    ])
+    @app_commands.default_permissions(administrator=True)
+    async def toggle_scan_bots(interaction: discord.Interaction, enabled: app_commands.Choice[str]):
+        await interaction.response.defer()
+        guild_id = str(interaction.guild.id)
+        scan_bots = enabled.value == "true"
+        
+        await db.set_scan_bot_messages(guild_id, scan_bots)
+        
+        status = "enabled" if scan_bots else "disabled"
+        await interaction.followup.send(
+            f"✅ Bot message scanning **{status}** for this server.\n"
+            f"{'The bot will now scan messages from other bots.' if scan_bots else 'The bot will now ignore messages from other bots.'}"
+        )
+    
     @tree.command(name="info", description="Show informations about the server's configuration and statistics")
     @app_commands.default_permissions(moderate_members=True)
     async def scam_stats(interaction: discord.Interaction):
@@ -89,6 +109,9 @@ def setup_config_commands(tree, bot, db):
             
             global_status = "✅ Enabled" if server_config.get('use_global_hashes', 1) == 1 else "❌ Disabled"
             embed.add_field(name="Global Hashes Status", value=global_status, inline=True)
+            
+            scan_bots_status = "✅ Enabled" if server_config.get('scan_bot_messages', 0) == 1 else "❌ Disabled"
+            embed.add_field(name="Scan Bot Messages", value=scan_bots_status, inline=True)
             
             if server_config['report_channel_id']:
                 channel = bot.get_channel(int(server_config['report_channel_id']))
