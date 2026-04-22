@@ -202,7 +202,7 @@ if __name__ == '__main__':
     if start_web_dashboard:
         try:
             init_dashboard(bot)
-            start_dashboard()
+            start_dashboard("0.0.0.0")
         except Exception as e:
             print(f"Warning: Could not start web dashboard: {e}")
     
