@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="30">
     <title>Scam Detector Bot - Dashboard</title>
     <style>
         * {
@@ -13,8 +14,8 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
             padding: 20px;
             min-height: 100vh;
         }
@@ -48,11 +49,12 @@
         }
         
         .stat-card {
-            background: white;
+            background: #1e1e2e;
             border-radius: 10px;
             padding: 25px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             transition: transform 0.3s;
+            border: 1px solid #2a2a3e;
         }
         
         .stat-card:hover {
@@ -62,27 +64,28 @@
         .stat-value {
             font-size: 2.5em;
             font-weight: bold;
-            color: #667eea;
+            color: #7289da;
             margin-bottom: 5px;
         }
         
         .stat-label {
             font-size: 1em;
-            color: #666;
+            color: #b0b0b0;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
         
         .section {
-            background: white;
+            background: #1e1e2e;
             border-radius: 10px;
             padding: 25px;
             margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: 1px solid #2a2a3e;
         }
         
         .section h2 {
-            color: #667eea;
+            color: #7289da;
             margin-bottom: 20px;
             font-size: 1.5em;
         }
@@ -95,41 +98,42 @@
         th, td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #2a2a3e;
         }
         
         th {
-            background: #f8f9fa;
+            background: #252538;
             font-weight: 600;
-            color: #667eea;
+            color: #7289da;
         }
         
         tr:hover {
-            background: #f8f9fa;
+            background: #252538;
         }
         
         .hash-code {
             font-family: 'Courier New', monospace;
-            background: #f0f0f0;
+            background: #252538;
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 0.9em;
+            color: #a0a0a0;
         }
         
         .guild-id {
             font-family: 'Courier New', monospace;
-            color: #666;
+            color: #888;
             font-size: 0.9em;
         }
         
         .timestamp {
-            color: #999;
+            color: #777;
             font-size: 0.9em;
         }
         
         .no-data {
             text-align: center;
-            color: #999;
+            color: #666;
             padding: 20px;
             font-style: italic;
         }
@@ -154,6 +158,10 @@
                 <div class="stat-label">Total Servers</div>
             </div>
             <div class="stat-card">
+                <div class="stat-value">{{ stats.total_members }}</div>
+                <div class="stat-label">Total Members</div>
+            </div>
+            <div class="stat-card">
                 <div class="stat-value">{{ stats.total_detections }}</div>
                 <div class="stat-label">Total Detections</div>
             </div>
@@ -168,20 +176,50 @@
         </div>
         
         <div class="section">
+            <h2>🏰 All Servers</h2>
+            {% if stats.guilds_info %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Server Name</th>
+                        <th>Server ID</th>
+                        <th>Members</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for guild in stats.guilds_info %}
+                    <tr>
+                        <td><strong>{{ guild.name }}</strong></td>
+                        <td><span class="guild-id">{{ guild.guild_id }}</span></td>
+                        <td>{{ guild.member_count if guild.member_count else 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="no-data">No servers configured yet</p>
+            {% endif %}
+        </div>
+        
+        <div class="section">
             <h2>📊 Hashes per Server</h2>
             {% if stats.hashes_per_server %}
             <table>
                 <thead>
                     <tr>
+                        <th>Server Name</th>
                         <th>Server ID</th>
+                        <th>Members</th>
                         <th>Hash Count</th>
-                        <th>False positive</th>
+                        <th>False Positives</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for server in stats.hashes_per_server %}
                     <tr>
+                        <td><strong>{{ server.name }}</strong></td>
                         <td><span class="guild-id">{{ server.guild_id }}</span></td>
+                        <td>{{ server.member_count if server.member_count else 'N/A' }}</td>
                         <td>{{ server.hash_count }}</td>
                         <td>{{ server.fp_count if server.fp_count is not none else 'None' }}</td>
                     </tr>
@@ -199,14 +237,18 @@
             <table>
                 <thead>
                     <tr>
+                        <th>Server Name</th>
                         <th>Server ID</th>
+                        <th>Members</th>
                         <th>Detection Count</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for server in stats.top_servers %}
                     <tr>
+                        <td><strong>{{ server.name }}</strong></td>
                         <td><span class="guild-id">{{ server.guild_id }}</span></td>
+                        <td>{{ server.member_count if server.member_count else 'N/A' }}</td>
                         <td>{{ server.count }}</td>
                     </tr>
                     {% endfor %}

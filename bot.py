@@ -15,6 +15,9 @@ from src.commands.help_commands import setup_help_commands
 from src.utils.messages import get_welcome_embed, get_setup_required_embed
 from src.config import DEFAULT_ACTION
 
+from web_stuff.web_dashboard import init_dashboard, start_dashboard
+
+
 load_dotenv()
 
 intents = discord.Intents.default()
@@ -193,4 +196,14 @@ if __name__ == '__main__':
     if not token:
         print("ERROR: DISCORD_TOKEN environment variable not set")
         exit(1)
+    
+    start_web_dashboard = os.getenv('START_DASHBOARD', 'false').lower() == 'true'
+    
+    if start_web_dashboard:
+        try:
+            init_dashboard(bot)
+            start_dashboard()
+        except Exception as e:
+            print(f"Warning: Could not start web dashboard: {e}")
+    
     bot.run(token)
