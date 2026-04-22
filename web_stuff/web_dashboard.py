@@ -14,7 +14,6 @@ _bot_instance = None
 def init_dashboard(bot):
     global _bot_instance
     _bot_instance = bot
-    _bot_instance = bot
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -49,8 +48,7 @@ def get_stats():
                     guilds_info.append({
                         'guild_id': guild_id,
                         'name': guild.name,
-                        'member_count': guild.member_count,
-                        'icon_url': str(guild.icon.url) if guild.icon else None
+                        'member_count': guild.member_count
                     })
             except Exception as e:
                 print(f"Error fetching guild {guild_id}: {e}")
@@ -137,7 +135,6 @@ def get_stats():
         'total_detections': total_detections,
         'total_server_hashes': total_server_hashes,
         'total_false_positives': total_false_positives,
-        'guilds_info': guilds_info,
         'top_servers': top_servers_enriched,
         'top_hashes': [dict(row) for row in top_hashes],
         'recent_detections': [dict(row) for row in recent_detections],

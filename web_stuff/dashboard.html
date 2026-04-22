@@ -176,32 +176,6 @@
         </div>
         
         <div class="section">
-            <h2>🏰 All Servers</h2>
-            {% if stats.guilds_info %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Server Name</th>
-                        <th>Server ID</th>
-                        <th>Members</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for guild in stats.guilds_info %}
-                    <tr>
-                        <td><strong>{{ guild.name }}</strong></td>
-                        <td><span class="guild-id">{{ guild.guild_id }}</span></td>
-                        <td>{{ guild.member_count if guild.member_count else 'N/A' }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <p class="no-data">No servers configured yet</p>
-            {% endif %}
-        </div>
-        
-        <div class="section">
             <h2>📊 Hashes per Server</h2>
             {% if stats.hashes_per_server %}
             <table>
