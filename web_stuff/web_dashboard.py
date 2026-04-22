@@ -24,7 +24,7 @@ def get_stats():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    cursor.execute('SELECT COUNT(DISTINCT guild_id) FROM server_config')
+    cursor.execute('SELECT COUNT(DISTINCT guild_id) FROM server_config WHERE active = 1')
     total_servers = cursor.fetchone()[0]
     
     cursor.execute('SELECT COUNT(*) FROM detections')
@@ -36,7 +36,7 @@ def get_stats():
     cursor.execute('SELECT COUNT(*) FROM false_positives')
     total_false_positives = cursor.fetchone()[0]
     
-    cursor.execute('SELECT DISTINCT guild_id FROM server_config')
+    cursor.execute('SELECT DISTINCT guild_id FROM server_config WHERE active = 1')
     guild_ids = [row[0] for row in cursor.fetchall()]
     
     guilds_info = []
@@ -56,6 +56,7 @@ def get_stats():
     cursor.execute('''
         SELECT guild_id, COUNT(*) as count
         FROM detections
+        WHERE guild_id IN (SELECT guild_id FROM server_config WHERE active = 1)
         GROUP BY guild_id
         ORDER BY count DESC
         LIMIT 10
@@ -85,17 +86,19 @@ def get_stats():
     cursor.execute('''
         SELECT guild_id, user_id, hash, detected_at
         FROM detections
+        WHERE guild_id IN (SELECT guild_id FROM server_config WHERE active = 1)
         ORDER BY detected_at DESC
         LIMIT 20
     ''')
     recent_detections = cursor.fetchall()
     
-    cursor.execute('SELECT DISTINCT guild_id FROM server_config')
+    cursor.execute('SELECT DISTINCT guild_id FROM server_config WHERE active = 1')
     all_guild_ids = [row[0] for row in cursor.fetchall()]
     
     cursor.execute('''
         SELECT guild_id, COUNT(*) as hash_count
         FROM server_hashes
+        WHERE guild_id IN (SELECT guild_id FROM server_config WHERE active = 1)
         GROUP BY guild_id
     ''')
     hashes_per_server_raw = cursor.fetchall()
@@ -104,6 +107,7 @@ def get_stats():
     cursor.execute('''
         SELECT guild_id, COUNT(*) as fp_count
         FROM false_positives
+        WHERE guild_id IN (SELECT guild_id FROM server_config WHERE active = 1)
         GROUP BY guild_id
     ''')
     false_positives_per_server_raw = cursor.fetchall()

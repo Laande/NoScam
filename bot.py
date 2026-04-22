@@ -62,6 +62,23 @@ async def on_ready():
     print(f'Bot connected as {bot.user}')
     activity = discord.Activity(type=discord.ActivityType.watching, name="👀")
     await bot.change_presence(activity=activity)
+    
+    await sync_server_statuses()
+
+async def sync_server_statuses():
+    current_guild_ids = {str(guild.id) for guild in bot.guilds}
+    
+    async with bot.db.get_connection() as conn:
+        async with conn.execute('SELECT guild_id FROM server_config WHERE active = 1') as cursor:
+            active_guild_ids = {row[0] for row in await cursor.fetchall()}
+    
+    to_deactivate = active_guild_ids - current_guild_ids
+    for guild_id in to_deactivate:
+        await bot.db.set_server_active(guild_id, False)
+        print(f"Marqué serveur {guild_id} comme inactif")
+    
+    for guild_id in current_guild_ids:
+        await bot.db.set_server_active(guild_id, True)
 
 @bot.event
 async def on_guild_join(guild):
@@ -94,6 +111,7 @@ async def on_guild_join(guild):
         
         guild_id = str(guild.id)
         await bot.db.set_report_channel(guild_id, str(channel.id))
+        await bot.db.set_server_active(guild_id, True)
         
         embed = get_welcome_embed(guild.name)
         await channel.send(embed=embed)
@@ -190,6 +208,13 @@ async def on_message(message):
             'hash': result['match']['hash']
         })
         
+
+@bot.event
+async def on_guild_remove(guild):
+    guild_id = str(guild.id)
+    await bot.db.set_server_active(guild_id, False)
+    bot.invalidate_config_cache(guild_id)
+
 
 if __name__ == '__main__':
     token = os.getenv('DISCORD_TOKEN')
