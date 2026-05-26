@@ -40,6 +40,21 @@
       "hash": "00000f3f2f0f0f0f",
       "description": "Phone Withdrawal",
       "image_path": "8.jpg"
+    },
+    {
+      "hash": "000080fff0f00006",
+      "description": "Crypto Withdrawal",
+      "image_path": "9.jpg"
+    },
+    {
+      "hash": "d03f370000d8dc10",
+      "description": "X MrBeast Crypto Scam",
+      "image_path": "10.jpg"
+    },
+    {
+      "hash": "f0fca0a721243506",
+      "description": "Active Code Bonus",
+      "image_path": "11.jpg"
     }
   ]
 }
