@@ -1,11 +1,13 @@
 import discord
 from discord import app_commands
-import aiohttp
 import json
 import io
+
+from src.handlers.detection import check_images_for_scam
 from src.core.image_hash import calculate_image_hash
 from src.config import MAX_HASHES_DISPLAY, GITHUB_IMAGES_BASE_URL
 from src.utils.pagination import EmbedPaginator, create_hash_embeds
+from src.utils.img_urls import extract_image_urls_from_message
 
 
 def setup_hash_commands(tree, bot, db):
@@ -125,6 +127,65 @@ def setup_hash_commands(tree, bot, db):
                 await interaction.followup.send(embed=embed)
         except Exception as e:
             await interaction.followup.send(f"❌ Error: {e}", ephemeral=True)
+
+
+    async def _analyze_message(interaction: discord.Interaction, message: discord.Message):
+        image_urls = extract_image_urls_from_message(message)
+        if not image_urls:
+            await interaction.followup.send('❌ No images found in the provided message.', ephemeral=True)
+            return
+
+        results = []
+        async for detection in check_images_for_scam(message, image_urls, bot.session, db):
+            results.append(detection)
+
+        if not results:
+            await interaction.followup.send('✅ No images could be analyzed from the provided message.', ephemeral=True)
+            return
+
+        embed = discord.Embed(title='🧪 Analysis Result', color=discord.Color.blue())
+        for index, result in enumerate(results, start=1):
+            title = f"⚠️ Image {index}" if result['detected'] else f"Image {index}"
+            field_value = f"Hash: `{result['image_hash']}`"
+            
+            if result['detected']:
+                field_value += f"\nDetected hash: `{result['match']['hash']}`\nDistance: {result['distance']}"
+
+            embed.add_field(name=title, value=field_value, inline=False)
+
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @tree.context_menu(name="Analyze Message Images")
+    @app_commands.default_permissions(moderate_members=True)
+    async def analyze_context(interaction: discord.Interaction, message: discord.Message):
+        await interaction.response.defer(ephemeral=True)
+        await _analyze_message(interaction, message)
+
+    @tree.command(name="analyze", description="Analyze message links for scam hashes")
+    @app_commands.describe(message_link="Message link or ID")
+    @app_commands.default_permissions(moderate_members=True)
+    async def analyze(interaction: discord.Interaction, message_link: str):
+        await interaction.response.defer(ephemeral=True)
+
+        if not message_link:
+            await interaction.followup.send("❌ Please provide a message link or ID", ephemeral=True)
+            return
+
+        if not message_link.isdigit():
+            message_link = message_link.split('/')[-1]
+            
+        message = None
+        try:
+            message = await interaction.channel.fetch_message(int(message_link))
+        except Exception:
+            await interaction.followup.send('❌ Could not resolve the message link.', ephemeral=True)
+            return
+        
+        if message is None:
+            await interaction.followup.send('❌ Could not fetch message with the provided ID.', ephemeral=True)
+            return
+
+        await _analyze_message(interaction, message)
 
     def format_embed(item, global_hash_dict):
             desc = item.get('description', '')

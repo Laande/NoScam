@@ -13,6 +13,7 @@ from src.commands.hash_commands import setup_hash_commands
 from src.commands.config_commands import setup_config_commands
 from src.commands.help_commands import setup_help_commands
 from src.utils.messages import get_welcome_embed, get_setup_required_embed
+from src.utils.img_urls import extract_image_urls_from_message
 from src.config import DEFAULT_ACTION
 
 from web_stuff.web_dashboard import init_dashboard, start_dashboard
@@ -155,29 +156,16 @@ async def on_message(message):
         if not scan_bots:
             return
     
-    image_urls = []
-    
-    if message.attachments:
-        image_urls.extend([
-            att.url for att in message.attachments
-            if att.content_type and att.content_type.startswith('image/')
-        ])
-    
-    if message.embeds:
-        for embed in message.embeds:
-            if embed.type == 'image' and embed.url:
-                image_urls.append(embed.url)
-            if embed.image and embed.image.url:
-                image_urls.append(embed.image.url)
-            if embed.thumbnail and embed.thumbnail.url:
-                image_urls.append(embed.thumbnail.url)
-    
+    image_urls = extract_image_urls_from_message(message)
     if not image_urls:
         return
     
-    result = await check_images_for_scam(message, image_urls, bot.session, bot.db)
+    result = None
+    async for detection in check_images_for_scam(message, image_urls, bot.session, bot.db):
+        result = detection
+        break
     
-    if result['detected']:
+    if result and result.get('detected'):
         user_id = str(message.author.id)
         server_config = await get_cached_config(guild_id)
         action = server_config['default_action'] if server_config and server_config['default_action'] else DEFAULT_ACTION
