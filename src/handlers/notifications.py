@@ -84,5 +84,43 @@ async def send_scam_report(bot, db, message, match, distance, image_file, messag
     try:
         await report_channel.send(embed=embed, file=image_file, view=view)
     except discord.Forbidden:
-        # Channel deleted, or missings perms
+        # Channel deleted, or missing perms
+        pass
+
+async def send_warning_report(bot, db, message, match, distance, image_file, message_content, message_jump_url):
+    guild_id = str(message.guild.id)
+    server_config = await db.get_server_config(guild_id)
+    
+    if not server_config or not server_config['report_channel_id']:
+        return
+    
+    report_channel = bot.get_channel(int(server_config['report_channel_id']))
+    if not report_channel:
+        return
+
+    is_fp = await db.is_false_positive(guild_id, match['hash'])
+    embed = discord.Embed(
+        title="⚠️ Suspicious Image Warning",
+        color=discord.Color.orange(),
+        timestamp=discord.utils.utcnow()
+    )
+
+    embed.add_field(name="User", value=f"{message.author.mention} ({message.author.id})", inline=False)
+    embed.add_field(name="Channel", value=message.channel.mention, inline=True)
+    embed.add_field(name="Hash Distance", value=f"{distance}", inline=True)
+
+    if message_content:
+        content_display = message_content[:1024]
+        embed.add_field(name="Message Content", value=content_display, inline=False)
+
+    embed.add_field(name="Description", value=match.get('description', 'N/A'), inline=False)
+    embed.add_field(name="Message Link", value=f"[Go to message]({message_jump_url})", inline=False)
+    embed.set_image(url=f"attachment://{image_file.filename}")
+    embed.set_footer(text=f"Hash: {match['hash']} (warning threshold)")
+
+    view = ActionButtons(message.author.id, message.guild.id, match['hash'], bot, db, is_false_positive=is_fp)
+
+    try:
+        await report_channel.send(embed=embed, file=image_file, view=view)
+    except discord.Forbidden:
         pass

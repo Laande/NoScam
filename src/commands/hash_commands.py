@@ -145,11 +145,19 @@ def setup_hash_commands(tree, bot, db):
 
         embed = discord.Embed(title='🧪 Analysis Result', color=discord.Color.blue())
         for index, result in enumerate(results, start=1):
-            title = f"⚠️ Image {index}" if result['detected'] else f"Image {index}"
-            field_value = f"Hash: `{result['image_hash']}`"
-            
             if result['detected']:
-                field_value += f"\nDetected hash: `{result['match']['hash']}`\nDistance: {result['distance']}"
+                title = f"🚨 Image {index}"
+                status = 'Scam image detected'
+            elif result.get('warning'):
+                title = f"⚠️ Image {index}"
+                status = 'Suspicious near-match'
+            else:
+                title = f"Image {index}"
+                status = 'No matching scam hash'
+
+            field_value = f"Hash: `{result['image_hash']}`\nStatus: {status}"
+            if result['match']:
+                field_value += f"\nClosest hash: `{result['match']['hash']}`\nDistance: {result['distance']}"
 
             embed.add_field(name=title, value=field_value, inline=False)
 

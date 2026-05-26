@@ -31,19 +31,46 @@ def setup_config_commands(tree, bot, db):
         await interaction.followup.send(f"✅ Automatic action set to: **{action.name}**")
     
     @tree.command(name="set_threshold", description="Set the tolerance threshold for hash comparison")
-    @app_commands.describe(threshold="Threshold (0-20, recommended: 5)")
+    @app_commands.describe(threshold="Threshold (recommended: 5)")
     @app_commands.default_permissions(administrator=True)
     async def set_threshold(interaction: discord.Interaction, threshold: int):
         await interaction.response.defer()
-        if threshold < 0 or threshold > 20:
-            await interaction.followup.send("❌ Threshold must be between 0 and 20.", ephemeral=True)
+        if threshold < 0 or threshold > 1000:
+            await interaction.followup.send("❌ Threshold must be between 0 and 1000.", ephemeral=True)
             return
         
         guild_id = str(interaction.guild.id)
         await db.set_hash_threshold(guild_id, threshold)
         bot.invalidate_config_cache(guild_id)
-        await interaction.followup.send(f"✅ Threshold set to: **{threshold}**")
-    
+        msg = f"✅ Threshold set to: **{threshold}**"
+        if threshold > 10:
+            msg += "\n*⚠️ Warning: Setting a very high threshold may lead to many false positives!*"
+        await interaction.followup.send(msg)
+
+    @tree.command(name="set_warning_threshold", description="Set the warning threshold for near-match hashes")
+    @app_commands.describe(threshold="Warning threshold (must be above the main threshold)")
+    @app_commands.default_permissions(administrator=True)
+    async def set_warning_threshold(interaction: discord.Interaction, threshold: int):
+        await interaction.response.defer()
+        if threshold < 0 or threshold > 2000:
+            await interaction.followup.send("❌ Warning threshold must be between 0 and 2000.", ephemeral=True)
+            return
+
+        guild_id = str(interaction.guild.id)
+        server_config = await db.get_server_config(guild_id)
+        base_threshold = server_config['hash_threshold'] if server_config else None
+
+        if base_threshold is not None and threshold <= base_threshold:
+            await interaction.followup.send("❌ Warning threshold must be greater than the main threshold.", ephemeral=True)
+            return
+
+        await db.set_warning_threshold(guild_id, threshold)
+        bot.invalidate_config_cache(guild_id)
+        msg = f"✅ Warning threshold set to: **{threshold}**"
+        if base_threshold is not None and threshold >= base_threshold + 5:
+            msg += "\n*⚠️ Warning: Setting a warning threshold to high may lead to many warnings!*"
+        await interaction.followup.send(msg)
+
     @tree.command(name="toggle_global_hashes", description="Enable or disable global hash database")
     @app_commands.describe(enabled="Enable or disable global hashes")
     @app_commands.choices(enabled=[
@@ -110,8 +137,8 @@ def setup_config_commands(tree, bot, db):
         
         if server_config:
             embed.add_field(name="Current Threshold", value=f"{server_config['hash_threshold']}", inline=True)
+            embed.add_field(name="Warning Threshold", value=f"{server_config['warning_threshold']}", inline=True)
             embed.add_field(name="Auto Action", value=f"{server_config['default_action']}", inline=True)
-            
             global_status = "✅ Enabled" if server_config.get('use_global_hashes', 1) == 1 else "❌ Disabled"
             embed.add_field(name="Global Hashes Status", value=global_status, inline=True)
             

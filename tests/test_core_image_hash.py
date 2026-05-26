@@ -1,6 +1,6 @@
 import os
 import pytest
-from src.core.image_hash import calculate_image_hash, find_similar_hash
+from src.core.image_hash import calculate_image_hash, find_best_hash
 
 
 def test_calculate_image_hash_from_file_bytes():
@@ -21,31 +21,39 @@ def test_calculate_image_hash_corrupted_bytes_raises_value_error():
         calculate_image_hash(b'not-an-image')
 
 
-def test_find_similar_hash_finds_exact_match():
-    sample_list = [{'hash': 'e1e140407f303e20', 'description': 'test'}]
-    item, distance = find_similar_hash('e1e140407f303e20', sample_list, threshold=0)
-    assert item is not None
+def test_find_best_hash_prefers_detected_over_warning():
+    sample_list = [
+        {'hash': 'e1e140407f303e22', 'description': 'exact'},
+        {'hash': 'e1e140407f303e20', 'description': 'best-match'}
+    ]
+
+    item, distance, status = find_best_hash('e1e140407f303e22', sample_list, threshold=2, warning_threshold=5)
+    assert status == 'detected'
+    assert item['description'] == 'exact'
     assert distance == 0
 
 
-def test_find_similar_hash_no_match():
-    sample_list = [{'hash': 'e1e140407f303e20', 'description': 'test'}]
-    item, distance = find_similar_hash('ffffffffffffffff', sample_list, threshold=0)
-    assert item is None
-    assert distance is None
-
-
-def test_find_similar_hash_with_threshold():
+def test_find_best_hash_returns_warning_when_no_detected_match():
     sample_list = [
-        {'hash': 'e1e140407f303e22', 'description': 'exact'},
-        {'hash': 'e1e140407f303e21', 'description': 'close'}
+        {'hash': 'e1e140407f303e21', 'description': 'near-warning'},
+        {'hash': 'ffffffffffffffff', 'description': 'far'}
     ]
 
-    item, distance = find_similar_hash('e1e140407f303e22', sample_list, threshold=2)
-    assert item is not None
-    assert distance is not None
-    assert distance <= 2
-    assert item['description'] in {'exact', 'close'}
+    item, distance, status = find_best_hash('e1e140407f303e22', sample_list, threshold=0, warning_threshold=3)
+    assert status == 'warning'
+    assert item['description'] == 'near-warning'
+    assert distance <= 3
+
+
+def test_find_best_hash_uses_config_defaults():
+    sample_list = [
+        {'hash': 'e1e140407f303e22', 'description': 'exact'},
+    ]
+
+    item, distance, status = find_best_hash('e1e140407f303e22', sample_list)
+    assert status == 'detected'
+    assert item['description'] == 'exact'
+    assert distance == 0
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")

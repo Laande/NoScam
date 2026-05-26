@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 from src.core.database import Database
 from src.handlers.detection import check_images_for_scam, process_detection_queue, detection_queue
-from src.handlers.notifications import send_user_warning, send_scam_report
+from src.handlers.notifications import send_user_warning, send_scam_report, send_warning_report
 from src.handlers.moderation import perform_auto_action
 from src.commands.hash_commands import setup_hash_commands
 from src.commands.config_commands import setup_config_commands
@@ -162,9 +162,12 @@ async def on_message(message):
     
     result = None
     async for detection in check_images_for_scam(message, image_urls, bot.session, bot.db):
-        result = detection
-        break
-    
+        if detection.get('detected'):
+            result = detection
+            break
+        if detection.get('warning') and result is None:
+            result = detection
+
     if result and result.get('detected'):
         user_id = str(message.author.id)
         server_config = await get_cached_config(guild_id)
@@ -195,6 +198,17 @@ async def on_message(message):
             'user_id': user_id,
             'hash': result['match']['hash']
         })
+    elif result and result.get('warning'):
+        asyncio.create_task(send_warning_report(
+            bot,
+            bot.db,
+            message,
+            result['match'],
+            result['distance'],
+            result['image_file'],
+            result['message_content'],
+            result['message_jump_url']
+        ))
         
 
 @bot.event

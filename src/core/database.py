@@ -28,6 +28,7 @@ class Database:
                     report_channel_id TEXT,
                     default_action TEXT DEFAULT 'delete',
                     hash_threshold INTEGER DEFAULT 5,
+                    warning_threshold INTEGER DEFAULT 10,
                     use_global_hashes INTEGER DEFAULT 1,
                     scan_bot_messages INTEGER DEFAULT 0,
                     active INTEGER DEFAULT 1
@@ -79,11 +80,17 @@ class Database:
             await conn.execute('CREATE INDEX IF NOT EXISTS idx_detections_hash ON detections(guild_id, hash)')
             await conn.execute('CREATE INDEX IF NOT EXISTS idx_detections_user ON detections(guild_id, user_id)')
             await conn.execute('CREATE INDEX IF NOT EXISTS idx_reputation ON user_reputation(guild_id, user_id)')
+
+            # Ensure legacy databases include warning_threshold config.
+            async with conn.execute("PRAGMA table_info(server_config)") as cursor:
+                columns = [row[1] for row in await cursor.fetchall()]
+            if 'warning_threshold' not in columns:
+                await conn.execute('ALTER TABLE server_config ADD COLUMN warning_threshold INTEGER DEFAULT 10')
     
     async def get_server_config(self, guild_id: str) -> Optional[Dict]:
         async with self.get_connection() as conn:
             async with conn.execute('''
-                SELECT report_channel_id, default_action, hash_threshold, use_global_hashes, scan_bot_messages, active
+                SELECT report_channel_id, default_action, hash_threshold, warning_threshold, use_global_hashes, scan_bot_messages, active
                 FROM server_config WHERE guild_id = ?
             ''', (guild_id,)) as cursor:
                 result = await cursor.fetchone()
@@ -93,9 +100,10 @@ class Database:
                 'report_channel_id': result[0],
                 'default_action': result[1],
                 'hash_threshold': result[2],
-                'use_global_hashes': result[3] if result[3] is not None else 1,
-                'scan_bot_messages': result[4] if result[4] is not None else 0,
-                'active': result[5] if result[5] is not None else 1
+                'warning_threshold': result[3] if result[3] is not None else 10,
+                'use_global_hashes': result[4] if result[4] is not None else 1,
+                'scan_bot_messages': result[5] if result[5] is not None else 0,
+                'active': result[6] if result[6] is not None else 1
             }
         return None
     
@@ -121,6 +129,14 @@ class Database:
                 INSERT INTO server_config (guild_id, hash_threshold)
                 VALUES (?, ?)
                 ON CONFLICT(guild_id) DO UPDATE SET hash_threshold = ?
+            ''', (guild_id, threshold, threshold))
+
+    async def set_warning_threshold(self, guild_id: str, threshold: int):
+        async with self.get_connection() as conn:
+            await conn.execute('''
+                INSERT INTO server_config (guild_id, warning_threshold)
+                VALUES (?, ?)
+                ON CONFLICT(guild_id) DO UPDATE SET warning_threshold = ?
             ''', (guild_id, threshold, threshold))
     
     async def set_use_global_hashes(self, guild_id: str, use_global: bool):
