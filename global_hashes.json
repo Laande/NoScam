@@ -20,7 +20,6 @@
       "description": "Phone Withdrawal",
       "image_path": "4.jpg"
     },
-
     {
       "hash": "ffff300000003c18",
       "description": "X Donald Trump Crypto Scam",
@@ -55,6 +54,26 @@
       "hash": "f0fca0a721243506",
       "description": "Active Code Bonus",
       "image_path": "11.jpg"
+    },
+    {
+      "hash": "fcfefec000c06000",
+      "description": "X MrBeast Crypto Scam",
+      "image_path": "12.jpg"
+    },
+    {
+      "hash": "00001e0e3e3e387c",
+      "description": "Active Code Bonus",
+      "image_path": "13.jpg"
+    },
+    {
+      "hash": "0000007f7f7f7f00",
+      "description": "Withdrawal Success",
+      "image_path": "14.jpg"
+    },
+    {
+      "hash": "ff0000f8f9f8f0e0",
+      "description": "Phone Withdrawal",
+      "image_path": "15.jpg"
     }
   ]
 }
