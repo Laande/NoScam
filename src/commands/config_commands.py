@@ -48,7 +48,7 @@ def setup_config_commands(tree, bot, db):
         await interaction.followup.send(msg)
 
     @tree.command(name="set_warning_threshold", description="Set the warning threshold for near-match hashes")
-    @app_commands.describe(threshold="Warning threshold (must be above the main threshold)")
+    @app_commands.describe(threshold="Warning threshold (0 to disable warnings)")
     @app_commands.default_permissions(administrator=True)
     async def set_warning_threshold(interaction: discord.Interaction, threshold: int):
         await interaction.response.defer()
@@ -60,15 +60,19 @@ def setup_config_commands(tree, bot, db):
         server_config = await db.get_server_config(guild_id)
         base_threshold = server_config['hash_threshold'] if server_config else None
 
-        if base_threshold is not None and threshold <= base_threshold:
-            await interaction.followup.send("❌ Warning threshold must be greater than the main threshold.", ephemeral=True)
+        if threshold != 0 and base_threshold is not None and threshold <= base_threshold:
+            await interaction.followup.send("❌ Warning threshold must be greater than the main threshold, or 0 to disable.", ephemeral=True)
             return
 
         await db.set_warning_threshold(guild_id, threshold)
         bot.invalidate_config_cache(guild_id)
-        msg = f"✅ Warning threshold set to: **{threshold}**"
-        if base_threshold is not None and threshold >= base_threshold + 5:
-            msg += "\n*⚠️ Warning: Setting a warning threshold to high may lead to many warnings!*"
+
+        if threshold == 0:
+            msg = "✅ Warnings are now disabled."
+        else:
+            msg = f"✅ Warning threshold set to: **{threshold}**"
+            if base_threshold is not None and threshold >= base_threshold + 5:
+                msg += "\n*⚠️ Warning: Setting a warning threshold too high may lead to many warnings!*"
         await interaction.followup.send(msg)
 
     @tree.command(name="toggle_global_hashes", description="Enable or disable global hash database")
@@ -137,7 +141,8 @@ def setup_config_commands(tree, bot, db):
         
         if server_config:
             embed.add_field(name="Current Threshold", value=f"{server_config['hash_threshold']}", inline=True)
-            embed.add_field(name="Warning Threshold", value=f"{server_config['warning_threshold']}", inline=True)
+            warning_value = "Disabled" if server_config['warning_threshold'] == 0 else str(server_config['warning_threshold'])
+            embed.add_field(name="Warning Threshold", value=warning_value, inline=True)
             embed.add_field(name="Auto Action", value=f"{server_config['default_action']}", inline=True)
             global_status = "✅ Enabled" if server_config.get('use_global_hashes', 1) == 1 else "❌ Disabled"
             embed.add_field(name="Global Hashes Status", value=global_status, inline=True)
