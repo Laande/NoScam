@@ -11,6 +11,8 @@ class ActionButtons(discord.ui.View):
         self.db = db_instance
         self.is_false_positive = is_false_positive
         
+        self.msg = "Scam image detected (manual action)"
+        
         if is_false_positive:
             self.remove_item(self.false_positive_button)
         else:
@@ -23,7 +25,7 @@ class ActionButtons(discord.ui.View):
         
         if member:
             try:
-                await member.timeout(discord.utils.utcnow() + timedelta(hours=1))
+                await member.timeout(discord.utils.utcnow() + timedelta(hours=1), reason=self.msg)
                 await interaction.response.send_message(f"✅ {member.mention} has been muted for 1 hour.")
             except Exception as e:
                 await interaction.response.send_message(f"❌ Error: {e}", ephemeral=True)
@@ -37,7 +39,7 @@ class ActionButtons(discord.ui.View):
         
         if member:
             try:
-                await member.kick(reason="Scam image detected")
+                await member.kick(reason=self.msg)
                 await interaction.response.send_message(f"✅ {member.name} has been kicked.")
             except Exception as e:
                 await interaction.response.send_message(f"❌ Error: {e}", ephemeral=True)
@@ -51,7 +53,7 @@ class ActionButtons(discord.ui.View):
         
         if member:
             try:
-                await member.ban(reason="Scam image detected")
+                await member.ban(reason=self.msg)
                 await interaction.response.send_message(f"✅ {member.name} has been banned.")
             except Exception as e:
                 await interaction.response.send_message(f"❌ Error: {e}", ephemeral=True)
