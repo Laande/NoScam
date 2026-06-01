@@ -180,7 +180,7 @@ async def on_message(message):
                 pass
         
         asyncio.create_task(perform_auto_action(message.author, message.guild, action))
-        asyncio.create_task(send_user_warning(message, action, message.guild.name))
+        asyncio.create_task(send_user_warning(message, action, message.guild.name, bot.db, guild_id, cooldown_minutes=5))
         
         asyncio.create_task(send_scam_report(
             bot,

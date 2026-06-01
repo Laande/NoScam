@@ -72,6 +72,7 @@ class Database:
                     user_id TEXT NOT NULL,
                     detection_count INTEGER DEFAULT 0,
                     last_detection TEXT,
+                    last_notification_sent TEXT,
                     PRIMARY KEY (guild_id, user_id)
                 )
             ''')
@@ -86,6 +87,12 @@ class Database:
                 columns = [row[1] for row in await cursor.fetchall()]
             if 'warning_threshold' not in columns:
                 await conn.execute('ALTER TABLE server_config ADD COLUMN warning_threshold INTEGER DEFAULT 10')
+            
+            # Ensure legacy databases include last_notification_sent column
+            async with conn.execute("PRAGMA table_info(user_reputation)") as cursor:
+                columns = [row[1] for row in await cursor.fetchall()]
+            if 'last_notification_sent' not in columns:
+                await conn.execute('ALTER TABLE user_reputation ADD COLUMN last_notification_sent TEXT')
     
     async def get_server_config(self, guild_id: str) -> Optional[Dict]:
         async with self.get_connection() as conn:
@@ -389,3 +396,26 @@ class Database:
             await conn.execute('DELETE FROM detections WHERE guild_id = ?', (guild_id,))
             await conn.execute('DELETE FROM false_positives WHERE guild_id = ?', (guild_id,))
             await conn.execute('DELETE FROM user_reputation WHERE guild_id = ?', (guild_id,))
+    
+    async def get_last_notification_sent(self, guild_id: str, user_id: str) -> Optional[str]:
+        async with self.get_connection() as conn:
+            async with conn.execute('''
+                SELECT last_notification_sent
+                FROM user_reputation
+                WHERE guild_id = ? AND user_id = ?
+            ''', (guild_id, user_id)) as cursor:
+                result = await cursor.fetchone()
+        
+        if result:
+            return result[0]
+        return None
+    
+    async def update_last_notification_sent(self, guild_id: str, user_id: str):
+        async with self.get_connection() as conn:
+            now = datetime.now().isoformat()
+            await conn.execute('''
+                INSERT INTO user_reputation (guild_id, user_id, last_notification_sent)
+                VALUES (?, ?, ?)
+                ON CONFLICT(guild_id, user_id) DO UPDATE SET
+                    last_notification_sent = ?
+            ''', (guild_id, user_id, now, now))

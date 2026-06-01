@@ -1,8 +1,20 @@
 import discord
-from src.config import DISCORD_SUPPORT_URL, SUPPORT_SERVER_URL
+from datetime import datetime, timedelta
+from src.config import DISCORD_SUPPORT_URL
 from src.handlers.views import ActionButtons
 
-async def send_user_warning(message, action, guild_name):
+async def send_user_warning(message, action, guild_name, db, guild_id, cooldown_minutes=5):
+    user_id = str(message.author.id)
+    last_notification = await db.get_last_notification_sent(guild_id, user_id)
+    
+    if last_notification:
+        last_sent_time = datetime.fromisoformat(last_notification)
+        time_since_last = datetime.now() - last_sent_time
+        cooldown_duration = timedelta(minutes=cooldown_minutes)
+        
+        if time_since_last < cooldown_duration:
+            return False
+    
     try:
         warning_embed = discord.Embed(
             title="⚠️ Scam Image Detected",
@@ -36,8 +48,12 @@ async def send_user_warning(message, action, guild_name):
         )
         
         await message.author.send(embed=warning_embed)
+            
+        await db.update_last_notification_sent(guild_id, user_id)
+        
+        return True
     except discord.Forbidden:
-        pass
+        return False
 
 async def send_scam_report(bot, db, message, match, distance, image_file, message_content, message_jump_url):
     guild_id = str(message.guild.id)
