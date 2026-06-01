@@ -45,7 +45,7 @@ async def check_images_for_scam(message, image_urls, session, db):
                         async with session.get(url) as img_resp:
                             if img_resp.status == 200:
                                 img_data = await img_resp.read()
-                                filename = url.split('/')[-1] or 'image.jpg'
+                                filename = url.split('/')[-1].split('?')[0] or 'image.jpg'
                                 image_file = discord.File(io.BytesIO(img_data), filename=filename)
 
                     yield {
