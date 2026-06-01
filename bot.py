@@ -114,7 +114,7 @@ async def on_guild_join(guild):
         await bot.db.set_report_channel(guild_id, str(channel.id))
         await bot.db.set_server_active(guild_id, True)
         
-        embed = get_welcome_embed(guild.name)
+        embed = get_welcome_embed()
         await channel.send(embed=embed)
         
     except discord.Forbidden:

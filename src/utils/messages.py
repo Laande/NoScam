@@ -1,7 +1,7 @@
 import discord
 from src.config import SUPPORT_SERVER_URL
 
-def get_welcome_embed(guild_name: str) -> discord.Embed:
+def get_welcome_embed() -> discord.Embed:
     embed = discord.Embed(
         title="🛡️ Scam Detector Bot",
         description="Thank you for adding me to your server!",
@@ -17,6 +17,7 @@ def get_welcome_embed(guild_name: str) -> discord.Embed:
     embed.add_field(
         name="Next Steps",
         value=(
+            "Make sure the bot role is above other roles to ensure proper functionality.\n"
             "Use `/help` to see all available commands and detailed information.\n\n"
             "`/add_hash` - Add a scam image hash\n"
             "`/set_action` - Configure automatic moderation\n"
