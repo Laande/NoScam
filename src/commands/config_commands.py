@@ -1,5 +1,6 @@
 import discord
 from discord import app_commands
+from typing import Optional
 from src.config import TOP_HASHES_LIMIT, SUPPORT_SERVER_URL
 
 def setup_config_commands(tree, bot, db):
@@ -12,6 +13,20 @@ def setup_config_commands(tree, bot, db):
         await db.set_report_channel(guild_id, str(channel.id))
         bot.invalidate_config_cache(guild_id)
         await interaction.followup.send(f"✅ Report channel set to: {channel.mention}")
+    
+    @tree.command(name="set_blacklist_channel", description="Ignore messages in a specific channel")
+    @app_commands.describe(channel="Channel whose messages should not be scanned (leave empty to clear)")
+    @app_commands.default_permissions(administrator=True)
+    async def set_blacklist_channel(interaction: discord.Interaction, channel: Optional[discord.TextChannel] = None):
+        await interaction.response.defer()
+        guild_id = str(interaction.guild.id)
+        await db.set_blacklist_channel(guild_id, str(channel.id) if channel else None)
+        bot.invalidate_config_cache(guild_id)
+
+        if channel:
+            await interaction.followup.send(f"✅ Messages in {channel.mention} will no longer be scanned.")
+        else:
+            await interaction.followup.send("✅ Blacklist channel cleared; scanning resumes normally.")
     
     @tree.command(name="set_action", description="Set the automatic action on detection")
     @app_commands.describe(action="Action to perform automatically")
@@ -150,6 +165,13 @@ def setup_config_commands(tree, bot, db):
             scan_bots_status = "✅ Enabled" if server_config.get('scan_bot_messages', 0) == 1 else "❌ Disabled"
             embed.add_field(name="Scan Bot Messages", value=scan_bots_status, inline=True)
             
+            if server_config.get('blacklist_channel_id'):
+                blacklisted = bot.get_channel(int(server_config['blacklist_channel_id']))
+                if blacklisted:
+                    embed.add_field(name="Ignored Channel", value=blacklisted.mention, inline=True)
+                else:
+                    embed.add_field(name="Ignored Channel", value=f"Channel ID {server_config['blacklist_channel_id']} (not found)", inline=True)
+
             if server_config['report_channel_id']:
                 channel = bot.get_channel(int(server_config['report_channel_id']))
                 if channel:

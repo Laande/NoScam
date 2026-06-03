@@ -149,9 +149,12 @@ async def on_message(message):
         return
     
     guild_id = str(message.guild.id)
+    server_config = await get_cached_config(guild_id)
+    
+    if str(message.channel.id) == server_config.get('blacklist_channel_id'):
+        return
     
     if message.author.bot:
-        server_config = await get_cached_config(guild_id)
         scan_bots = server_config.get('scan_bot_messages', 0) == 1 if server_config else False
         if not scan_bots:
             return

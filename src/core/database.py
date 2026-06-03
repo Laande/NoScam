@@ -26,6 +26,7 @@ class Database:
                 CREATE TABLE IF NOT EXISTS server_config (
                     guild_id TEXT PRIMARY KEY,
                     report_channel_id TEXT,
+                    blacklist_channel_id TEXT,
                     default_action TEXT DEFAULT 'delete',
                     hash_threshold INTEGER DEFAULT 5,
                     warning_threshold INTEGER DEFAULT 10,
@@ -82,11 +83,13 @@ class Database:
             await conn.execute('CREATE INDEX IF NOT EXISTS idx_detections_user ON detections(guild_id, user_id)')
             await conn.execute('CREATE INDEX IF NOT EXISTS idx_reputation ON user_reputation(guild_id, user_id)')
 
-            # Ensure legacy databases include warning_threshold config.
+            # Ensure legacy databases include warning_threshold and blacklist_channel_id config.
             async with conn.execute("PRAGMA table_info(server_config)") as cursor:
                 columns = [row[1] for row in await cursor.fetchall()]
             if 'warning_threshold' not in columns:
                 await conn.execute('ALTER TABLE server_config ADD COLUMN warning_threshold INTEGER DEFAULT 10')
+            if 'blacklist_channel_id' not in columns:
+                await conn.execute('ALTER TABLE server_config ADD COLUMN blacklist_channel_id TEXT')
             
             # Ensure legacy databases include last_notification_sent column
             async with conn.execute("PRAGMA table_info(user_reputation)") as cursor:
@@ -97,7 +100,7 @@ class Database:
     async def get_server_config(self, guild_id: str) -> Optional[Dict]:
         async with self.get_connection() as conn:
             async with conn.execute('''
-                SELECT report_channel_id, default_action, hash_threshold, warning_threshold, use_global_hashes, scan_bot_messages, active
+                SELECT report_channel_id, blacklist_channel_id, default_action, hash_threshold, warning_threshold, use_global_hashes, scan_bot_messages, active
                 FROM server_config WHERE guild_id = ?
             ''', (guild_id,)) as cursor:
                 result = await cursor.fetchone()
@@ -105,12 +108,13 @@ class Database:
         if result:
             return {
                 'report_channel_id': result[0],
-                'default_action': result[1],
-                'hash_threshold': result[2],
-                'warning_threshold': result[3] if result[3] is not None else 10,
-                'use_global_hashes': result[4] if result[4] is not None else 1,
-                'scan_bot_messages': result[5] if result[5] is not None else 0,
-                'active': result[6] if result[6] is not None else 1
+                'blacklist_channel_id': result[1],
+                'default_action': result[2],
+                'hash_threshold': result[3],
+                'warning_threshold': result[4] if result[4] is not None else 10,
+                'use_global_hashes': result[5] if result[5] is not None else 1,
+                'scan_bot_messages': result[6] if result[6] is not None else 0,
+                'active': result[7] if result[7] is not None else 1
             }
         return None
     
@@ -121,6 +125,21 @@ class Database:
                 VALUES (?, ?)
                 ON CONFLICT(guild_id) DO UPDATE SET report_channel_id = ?
             ''', (guild_id, channel_id, channel_id))
+    
+    async def set_blacklist_channel(self, guild_id: str, channel_id: str | None):
+        async with self.get_connection() as conn:
+            if channel_id is None:
+                await conn.execute('''
+                    INSERT INTO server_config (guild_id, blacklist_channel_id)
+                    VALUES (?, NULL)
+                    ON CONFLICT(guild_id) DO UPDATE SET blacklist_channel_id = NULL
+                ''', (guild_id,))
+            else:
+                await conn.execute('''
+                    INSERT INTO server_config (guild_id, blacklist_channel_id)
+                    VALUES (?, ?)
+                    ON CONFLICT(guild_id) DO UPDATE SET blacklist_channel_id = ?
+                ''', (guild_id, channel_id, channel_id))
     
     async def set_default_action(self, guild_id: str, action: str):
         async with self.get_connection() as conn:

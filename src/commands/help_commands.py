@@ -27,6 +27,7 @@ def setup_help_commands(tree, bot, db):
             name="⚙️ Configuration (Admin)",
             value=(
                 "`/set_report_channel` - Set the channel for scam reports\n"
+                "`/set_blacklist_channel` - Ignore messages in a specific channel\n"
                 "`/set_action` - Configure automatic moderation action\n"
                 "`/set_threshold` - Adjust detection sensitivity (0-20)\n"
                 "`/set_warning_threshold` - Set the warning threshold for near-match hashes (0 to disable)\n"
