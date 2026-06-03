@@ -156,7 +156,7 @@ def setup_hash_commands(tree, bot, db):
                 status = 'No matching scam hash'
 
             field_value = f"Hash: `{result['image_hash']}`\nStatus: {status}"
-            if result['match']:
+            if result['match'] and not result['detected']:
                 field_value += f"\nClosest hash: `{result['match']['hash']}`\nDistance: {result['distance']}"
 
             embed.add_field(name=title, value=field_value, inline=False)
