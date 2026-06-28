@@ -23,7 +23,6 @@ load_dotenv()
 
 intents = discord.Intents.default()
 intents.message_content = True
-intents.members = True
 
 class Bot(discord.Client):
     def __init__(self):
