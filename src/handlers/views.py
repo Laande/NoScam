@@ -2,7 +2,7 @@ import discord
 from datetime import timedelta
 
 class ActionButtons(discord.ui.View):
-    def __init__(self, user_id, guild_id, hash_value, bot_instance, db_instance, is_false_positive=False):
+    def __init__(self, user_id, guild_id, hash_value, bot_instance, db_instance, is_false_positive=False, member=None):
         super().__init__(timeout=None)
         self.user_id = user_id
         self.guild_id = guild_id
@@ -10,6 +10,7 @@ class ActionButtons(discord.ui.View):
         self.bot = bot_instance
         self.db = db_instance
         self.is_false_positive = is_false_positive
+        self.member = member
         
         self.msg = "Scam image detected (manual action)"
         
@@ -17,11 +18,26 @@ class ActionButtons(discord.ui.View):
             self.remove_item(self.false_positive_button)
         else:
             self.remove_item(self.mark_as_scam_button)
+
+    async def _resolve_member(self, guild):
+        if self.member is not None:
+            return self.member
+        if guild is None:
+            return None
+
+        member = guild.get_member(self.user_id)
+        if member is not None:
+            return member
+
+        try:
+            return await guild.fetch_member(self.user_id)
+        except (discord.NotFound, discord.HTTPException):
+            return None
     
     @discord.ui.button(label="Mute", style=discord.ButtonStyle.secondary, emoji="🔇", row=0)
     async def mute_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         guild = self.bot.get_guild(self.guild_id)
-        member = guild.get_member(self.user_id)
+        member = await self._resolve_member(guild)
         
         if member:
             try:
@@ -35,7 +51,7 @@ class ActionButtons(discord.ui.View):
     @discord.ui.button(label="Kick", style=discord.ButtonStyle.danger, emoji="👢", row=0)
     async def kick_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         guild = self.bot.get_guild(self.guild_id)
-        member = guild.get_member(self.user_id)
+        member = await self._resolve_member(guild)
         
         if member:
             try:
@@ -49,7 +65,7 @@ class ActionButtons(discord.ui.View):
     @discord.ui.button(label="Ban", style=discord.ButtonStyle.danger, emoji="🔨", row=0)
     async def ban_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         guild = self.bot.get_guild(self.guild_id)
-        member = guild.get_member(self.user_id)
+        member = await self._resolve_member(guild)
         
         if member:
             try:
@@ -72,12 +88,13 @@ class ActionButtons(discord.ui.View):
             await interaction.response.send_message(f"✅ Hash marked as false positive. It will no longer trigger detections on this server.")
             
             new_view = ActionButtons(
-                self.user_id, 
-                self.guild_id, 
-                self.hash_value, 
-                self.bot, 
-                self.db, 
-                is_false_positive=True
+                self.user_id,
+                self.guild_id,
+                self.hash_value,
+                self.bot,
+                self.db,
+                is_false_positive=True,
+                member=self.member
             )
             await interaction.message.edit(view=new_view)
         else:
@@ -94,12 +111,13 @@ class ActionButtons(discord.ui.View):
             await interaction.response.send_message(f"✅ Hash removed from false positives. It will now trigger detections again.")
             
             new_view = ActionButtons(
-                self.user_id, 
-                self.guild_id, 
-                self.hash_value, 
-                self.bot, 
-                self.db, 
-                is_false_positive=False
+                self.user_id,
+                self.guild_id,
+                self.hash_value,
+                self.bot,
+                self.db,
+                is_false_positive=False,
+                member=self.member
             )
             await interaction.message.edit(view=new_view)
         else:

@@ -95,7 +95,7 @@ async def send_scam_report(bot, db, message, match, distance, image_file, messag
     embed.set_image(url=f"attachment://{image_file.filename}")
     embed.set_footer(text=f"Hash: {match['hash']}")
     
-    view = ActionButtons(message.author.id, message.guild.id, match['hash'], bot, db, is_false_positive=is_fp)
+    view = ActionButtons(message.author.id, message.guild.id, match['hash'], bot, db, is_false_positive=is_fp, member=message.author)
     
     try:
         await report_channel.send(embed=embed, file=image_file, view=view)
@@ -134,7 +134,7 @@ async def send_warning_report(bot, db, message, match, distance, image_file, mes
     embed.set_image(url=f"attachment://{image_file.filename}")
     embed.set_footer(text=f"Hash: {match['hash']} (warning threshold)")
 
-    view = ActionButtons(message.author.id, message.guild.id, match['hash'], bot, db, is_false_positive=is_fp)
+    view = ActionButtons(message.author.id, message.guild.id, match['hash'], bot, db, is_false_positive=is_fp, member=message.author)
 
     try:
         await report_channel.send(embed=embed, file=image_file, view=view)
