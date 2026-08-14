@@ -20,12 +20,12 @@ def setup_hash_commands(tree, bot, db):
 
         matches = [
             h for h in server_hashes
-            if current.lower() in h['hash'].lower()
+            if current.lower() in h.get('hash', '').lower()
         ][:25]
 
         return [
             app_commands.Choice(
-                name=f"{h['hash'][:50]} - {h.get('description', 'No description')[:30]}",
+                name=f"{(h['hash'])[:50]} - {(h.get('description') or 'No description')[:30]}",
                 value=h['hash']
             )
             for h in matches
@@ -44,12 +44,12 @@ def setup_hash_commands(tree, bot, db):
             server_hashes = await db.get_server_hashes(guild_id)
             matches = [
                 h for h in server_hashes
-                if current.lower() in h['hash'].lower()
+                if current.lower() in h.get('hash', '').lower()
             ][:25]
 
             return [
                 app_commands.Choice(
-                    name=f"{h['hash'][:50]} - {h.get('description', 'No description')[:30]}",
+                    name=f"{(h['hash'])[:50]} - {(h.get('description') or 'No description')[:30]}",
                     value=h['hash']
                 )
                 for h in matches
@@ -58,7 +58,7 @@ def setup_hash_commands(tree, bot, db):
             false_positives = await db.get_false_positives(guild_id)
             matches = [
                 fp for fp in false_positives
-                if current.lower() in fp['hash'].lower()
+                if current.lower() in fp.get('hash', '').lower()
             ][:25]
 
             return [
