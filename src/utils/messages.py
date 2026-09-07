@@ -17,11 +17,10 @@ def get_welcome_embed() -> discord.Embed:
     embed.add_field(
         name="Next Steps",
         value=(
-            "Make sure the bot role is above other roles to ensure proper functionality.\n"
-            "Use `/help` to see all available commands and detailed information.\n\n"
+            "__**Make sure the bot role is above other roles to ensure proper functionality.**__\n\n"
+            "Use `/help` to see all available commands and detailed information.\n"
             "`/add_hash` - Add a scam image hash\n"
             "`/set_action` - Configure automatic moderation\n"
-            "`/set_threshold` - Adjust detection sensitivity (default: 5)\n"
         ),
         inline=False
     )
@@ -42,8 +41,9 @@ def get_setup_required_embed() -> discord.Embed:
         value=(
             "1. Create a text channel for scam reports\n"
             "2. Give me permission to send messages in that channel\n"
-            "3. Use `/set_report_channel` to configure the bot\n"
-            "4. Use `/help` for more information"
+            "3. Make sure the bot role is above other roles\n"
+            "4. Use `/set_report_channel` to configure the bot\n"
+            "5. Use `/help` for more information"
         ),
         inline=False
     )
