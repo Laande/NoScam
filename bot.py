@@ -144,7 +144,11 @@ async def on_message(message):
     if not message.guild:
         return
     
-    if not message.attachments and not message.embeds:
+    if (
+        not message.attachments
+        and not message.embeds
+        and not message.message_snapshots
+    ):
         return
     
     guild_id = str(message.guild.id)

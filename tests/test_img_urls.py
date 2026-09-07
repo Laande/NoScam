@@ -23,10 +23,18 @@ class DummyEmbed:
 
 
 class DummyMessage:
-    def __init__(self, attachments=None, embeds=None, content=None):
+    def __init__(self, attachments=None, embeds=None, content=None, message_snapshots=None):
         self.attachments = attachments or []
         self.embeds = embeds or []
         self.content = content or ''
+        self.message_snapshots = message_snapshots or []
+
+
+class DummyMessageSnapshot:
+    def __init__(self, content='', attachments=None, embeds=None):
+        self.content = content
+        self.attachments = attachments or []
+        self.embeds = embeds or []
 
 
 def test_extract_image_urls_from_message_with_image_attachments():
@@ -71,6 +79,23 @@ def test_extract_image_urls_from_message_with_urls_in_content():
     assert result == [
         'https://cdn.discordapp.com/attachments/123/456/image1.jpg?ex=1&is=2',
         'https://cdn.discordapp.com/attachments/123/456/image2.png?ex=3&is=4'
+    ]
+
+
+def test_extract_image_urls_from_message_with_forwarded_message_snapshot():
+    message = DummyMessage(message_snapshots=[DummyMessageSnapshot(
+        content='Forwarded image: https://cdn.discordapp.com/attachments/123/456/forwarded.png',
+        attachments=[DummyAttachment(
+            'https://cdn.discordapp.com/attachments/123/456/attached.jpg',
+            'image/jpeg'
+        )]
+    )])
+
+    result = extract_image_urls_from_message(message)
+
+    assert result == [
+        'https://cdn.discordapp.com/attachments/123/456/attached.jpg',
+        'https://cdn.discordapp.com/attachments/123/456/forwarded.png'
     ]
 
 
