@@ -55,7 +55,7 @@ class Bot(discord.Client):
             stats = await self.db.get_global_detection_stats(bot.guilds)
             activity = discord.Activity(
                 type=discord.ActivityType.watching,
-                name=f"{stats['total_messages']} messages deleted across {stats['total_members']} members"
+                name=f"{format_number(stats['total_messages'])} msg deleted across {format_number(stats['total_members'])} members"
             )
             await self.change_presence(activity=activity)
             await asyncio.sleep(3600)
@@ -77,6 +77,13 @@ async def on_ready():
     print(f'Bot connected as {bot.user}')
     
     await sync_server_statuses()
+
+def format_number(num):
+    if num >= 1_000_000:
+        return f"{num / 1_000_000:.1f}m".rstrip('0').rstrip('.')
+    if num >= 1_000:
+        return f"{num / 1_000:.1f}k".rstrip('0').rstrip('.')
+    return str(num)
 
 async def sync_server_statuses():
     current_guild_ids = {str(guild.id) for guild in bot.guilds}
