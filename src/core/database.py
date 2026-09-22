@@ -288,6 +288,14 @@ class Database:
                     last_detection = ?
             ''', (guild_id, user_id, reputation_time, reputation_time))
     
+    async def get_global_detection_stats(self) -> Dict:
+        async with self.get_connection() as conn:
+            async with conn.execute('SELECT COUNT(*) FROM detections') as cursor:
+                total_messages = (await cursor.fetchone())[0]
+            async with conn.execute('SELECT COUNT(DISTINCT user_id) FROM detections') as cursor:
+                total_users = (await cursor.fetchone())[0]
+        return {'total_messages': total_messages, 'total_users': total_users}
+    
     async def get_detection_stats(self, guild_id: str) -> Dict:
         async with self.get_connection() as conn:
             async with conn.execute('SELECT COUNT(*) FROM detections WHERE guild_id = ?', (guild_id,)) as cursor:

@@ -31,6 +31,7 @@ class Bot(discord.Client):
         self.session = None
         self.db = Database()
         self.queue_processor_task = None
+        self.status_task = None
         self.server_config_cache = {}
         self.cache_ttl = 300
     
@@ -42,16 +43,30 @@ class Bot(discord.Client):
         await self.db.init_database()
         self.session = aiohttp.ClientSession()
         self.queue_processor_task = asyncio.create_task(process_detection_queue(self.db))
+        self.status_task = asyncio.create_task(self.update_presence_loop())
         
         setup_hash_commands(self.tree, self, self.db)
         setup_config_commands(self.tree, self, self.db)
         setup_help_commands(self.tree, self, self.db)
+    
+    async def update_presence_loop(self):
+        await self.wait_until_ready()
+        while not self.is_closed():
+            stats = await self.db.get_global_detection_stats()
+            activity = discord.Activity(
+                type=discord.ActivityType.watching,
+                name=f"{stats['total_messages']} messages deleted across {stats['total_users']} users"
+            )
+            await self.change_presence(activity=activity)
+            await asyncio.sleep(3600)
         
     async def close(self):
         if self.session:
             await self.session.close()
         if self.queue_processor_task:
             self.queue_processor_task.cancel()
+        if self.status_task:
+            self.status_task.cancel()
         await super().close()
 
 bot = Bot()
@@ -60,8 +75,6 @@ bot = Bot()
 async def on_ready():
     await bot.tree.sync()
     print(f'Bot connected as {bot.user}')
-    activity = discord.Activity(type=discord.ActivityType.watching, name="👀")
-    await bot.change_presence(activity=activity)
     
     await sync_server_statuses()
 
