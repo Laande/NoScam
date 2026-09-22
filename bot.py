@@ -52,10 +52,10 @@ class Bot(discord.Client):
     async def update_presence_loop(self):
         await self.wait_until_ready()
         while not self.is_closed():
-            stats = await self.db.get_global_detection_stats()
+            stats = await self.db.get_global_detection_stats(bot.guilds)
             activity = discord.Activity(
                 type=discord.ActivityType.watching,
-                name=f"{stats['total_messages']} messages deleted across {stats['total_users']} users"
+                name=f"{stats['total_messages']} messages deleted across {stats['total_members']} members"
             )
             await self.change_presence(activity=activity)
             await asyncio.sleep(3600)
