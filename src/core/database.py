@@ -32,6 +32,7 @@ class Database:
                     warning_threshold INTEGER DEFAULT 10,
                     use_global_hashes INTEGER DEFAULT 1,
                     scan_bot_messages INTEGER DEFAULT 0,
+                    permission_warning_muted INTEGER DEFAULT 0,
                     active INTEGER DEFAULT 1
                 )
             ''')
@@ -90,6 +91,8 @@ class Database:
                 await conn.execute('ALTER TABLE server_config ADD COLUMN warning_threshold INTEGER DEFAULT 10')
             if 'blacklist_channel_id' not in columns:
                 await conn.execute('ALTER TABLE server_config ADD COLUMN blacklist_channel_id TEXT')
+            if 'permission_warning_muted' not in columns:
+                await conn.execute('ALTER TABLE server_config ADD COLUMN permission_warning_muted INTEGER DEFAULT 0')
             
             # Ensure legacy databases include last_notification_sent column
             async with conn.execute("PRAGMA table_info(user_reputation)") as cursor:
@@ -100,7 +103,7 @@ class Database:
     async def get_server_config(self, guild_id: str) -> Optional[Dict]:
         async with self.get_connection() as conn:
             async with conn.execute('''
-                SELECT report_channel_id, blacklist_channel_id, default_action, hash_threshold, warning_threshold, use_global_hashes, scan_bot_messages, active
+                SELECT report_channel_id, blacklist_channel_id, default_action, hash_threshold, warning_threshold, use_global_hashes, scan_bot_messages, permission_warning_muted, active
                 FROM server_config WHERE guild_id = ?
             ''', (guild_id,)) as cursor:
                 result = await cursor.fetchone()
@@ -114,7 +117,8 @@ class Database:
                 'warning_threshold': result[4] if result[4] is not None else 10,
                 'use_global_hashes': result[5] if result[5] is not None else 1,
                 'scan_bot_messages': result[6] if result[6] is not None else 0,
-                'active': result[7] if result[7] is not None else 1
+                'permission_warning_muted': result[7] if result[7] is not None else 0,
+                'active': result[8] if result[8] is not None else 1
             }
         return None
     
@@ -188,7 +192,15 @@ class Database:
                 VALUES (?, ?)
                 ON CONFLICT(guild_id) DO UPDATE SET active = ?
             ''', (guild_id, 1 if active else 0, 1 if active else 0))
-    
+
+    async def set_permission_warning_muted(self, guild_id: str, muted: bool):
+        async with self.get_connection() as conn:
+            await conn.execute('''
+                INSERT INTO server_config (guild_id, permission_warning_muted)
+                VALUES (?, ?)
+                ON CONFLICT(guild_id) DO UPDATE SET permission_warning_muted = ?
+            ''', (guild_id, 1 if muted else 0, 1 if muted else 0))
+
     async def add_server_hash(self, guild_id: str, hash_value: str, description: str = None) -> bool:
         try:
             async with self.get_connection() as conn:

@@ -122,3 +122,31 @@ class ActionButtons(discord.ui.View):
             await interaction.message.edit(view=new_view)
         else:
             await interaction.response.send_message("❌ This hash is not in the false positives list.", ephemeral=True)
+
+
+class PermissionWarningView(discord.ui.View):
+    def __init__(self, guild_id, db):
+        super().__init__(timeout=None)
+        self.guild_id = str(guild_id)
+        self.db = db
+
+    @discord.ui.button(label="Mute this warning", style=discord.ButtonStyle.secondary, emoji="🔕", row=0)
+    async def mute_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        try:
+            await self.db.set_permission_warning_muted(self.guild_id, True)
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Error: {e}", ephemeral=True)
+            return
+
+        for item in self.children:
+            item.disabled = True
+
+        embed = discord.Embed(
+            title="🔕 Warning muted",
+            description=(
+                "I won't warn about missing permissions again.\n"
+                "Automatic actions are still failing silently."
+            ),
+            color=discord.Color.greyple()
+        )
+        await interaction.response.edit_message(embed=embed, view=self)

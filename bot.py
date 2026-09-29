@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from src.core.database import Database
 from src.handlers.detection import check_images_for_scam, process_detection_queue, detection_queue
 from src.handlers.notifications import send_user_warning, send_scam_report, send_warning_report
-from src.handlers.moderation import perform_auto_action
+from src.handlers.moderation import perform_auto_action, send_delete_permission_warning
 from src.commands.hash_commands import setup_hash_commands
 from src.commands.config_commands import setup_config_commands
 from src.commands.help_commands import setup_help_commands
@@ -206,10 +206,15 @@ async def on_message(message):
         if action != 'none':
             try:
                 await message.delete()
+            except discord.Forbidden as e:
+                try:
+                    await send_delete_permission_warning(bot, bot.db, message.guild)
+                except Exception as warning_error:
+                    pass
             except Exception:
                 pass
-        
-        asyncio.create_task(perform_auto_action(message.author, action, guild=message.guild))
+
+        asyncio.create_task(perform_auto_action(message.author, action, guild=message.guild, bot=bot, db=bot.db))
         asyncio.create_task(send_user_warning(message, action, message.guild.name, bot.db, guild_id, cooldown_minutes=5))
         
         asyncio.create_task(send_scam_report(

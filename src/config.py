@@ -7,3 +7,11 @@ DEFAULT_ACTION = "delete"
 MUTE_DURATION_HOURS = 1
 MAX_HASHES_DISPLAY = 25
 TOP_HASHES_LIMIT = 10
+PERMISSION_WARNING_COOLDOWN_MINUTES = 60
+
+ACTION_PERMISSION_NAMES = {
+    'delete': 'Manage Messages',
+    'mute': 'Timeout Members',
+    'kick': 'Kick Members',
+    'ban': 'Ban Members',
+}
