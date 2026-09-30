@@ -47,12 +47,12 @@ async def send_user_warning(message, action, guild_name, db, guild_id, cooldown_
             inline=False
         )
         
-        await message.author.send(embed=warning_embed)
-            
         await db.update_last_notification_sent(guild_id, user_id)
+        await message.author.send(embed=warning_embed)
         
         return True
-    except discord.Forbidden:
+    except discord.HTTPException as e:
+        print(f"Could not DM {message.author.id}: {e.status} (error code: {e.code}): {e.text}")
         return False
 
 async def send_scam_report(bot, db, message, match, distance, image_file, message_content, message_jump_url):
