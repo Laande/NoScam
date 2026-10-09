@@ -214,8 +214,8 @@ async def on_message(message):
             except Exception:
                 pass
 
-        asyncio.create_task(perform_auto_action(message.author, action, guild=message.guild, bot=bot, db=bot.db))
         asyncio.create_task(send_user_warning(message, action, message.guild.name, bot.db, guild_id, cooldown_minutes=5))
+        asyncio.create_task(perform_auto_action(message.author, action, guild=message.guild, bot=bot, db=bot.db))
         
         asyncio.create_task(send_scam_report(
             bot,
