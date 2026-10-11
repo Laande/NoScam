@@ -134,6 +134,7 @@ def setup_config_commands(tree, bot, db):
     
     @tree.command(name="info", description="Show informations about the server's configuration and statistics")
     @app_commands.default_permissions(moderate_members=True)
+    @app_commands.guild_only()
     async def scam_stats(interaction: discord.Interaction):
         await interaction.response.defer()
         guild_id = str(interaction.guild.id)
@@ -191,7 +192,8 @@ def setup_config_commands(tree, bot, db):
     @tree.command(name="user_reputation", description="Check a user's reputation")
     @app_commands.describe(user="The user to check")
     @app_commands.default_permissions(moderate_members=True)
-    async def user_reputation(interaction: discord.Interaction, user: discord.Member):
+    @app_commands.guild_only()
+    async def user_reputation(interaction: discord.Interaction, user: discord.User):
         await interaction.response.defer()
         guild_id = str(interaction.guild.id)
         user_id = str(user.id)
@@ -203,7 +205,7 @@ def setup_config_commands(tree, bot, db):
             return
         
         embed = discord.Embed(
-            title=f"User Reputation - {user.name}",
+            title=f"User Reputation - {user.display_name}",
             color=discord.Color.orange() if reputation['detection_count'] >= 2 else discord.Color.blue()
         )
         
@@ -222,7 +224,8 @@ def setup_config_commands(tree, bot, db):
     @tree.command(name="reset_user_hits", description="Reset the hit count for a specific user")
     @app_commands.describe(user="The user to reset hits for")
     @app_commands.default_permissions(moderate_members=True)
-    async def reset_user_hits(interaction: discord.Interaction, user: discord.Member):
+    @app_commands.guild_only()
+    async def reset_user_hits(interaction: discord.Interaction, user: discord.User):
         await interaction.response.defer()
         guild_id = str(interaction.guild.id)
         user_id = str(user.id)

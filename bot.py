@@ -71,6 +71,31 @@ class Bot(discord.Client):
 
 bot = Bot()
 
+@bot.tree.error
+async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.TransformerError):
+        message = f"❌ Could not resolve `{error.value}`. Make sure the user or channel exists and is accessible in this server."
+    elif isinstance(error, app_commands.CheckFailure):
+        message = "❌ You do not have permission to use this command here."
+    elif (
+        isinstance(error, app_commands.CommandInvokeError)
+        and isinstance(error.original, AttributeError)
+        and "'NoneType' object has no attribute" in str(error.original)
+    ):
+        message = "❌ This command can only be used in a server."
+    else:
+        command_name = interaction.command.name if interaction.command else "unknown"
+        print(f"Error in command /{command_name}: {error!r}")
+        message = "❌ An unexpected error occurred while running this command."
+
+    try:
+        if interaction.response.is_done():
+            await interaction.followup.send(message, ephemeral=True)
+        else:
+            await interaction.response.send_message(message, ephemeral=True)
+    except discord.HTTPException:
+        pass
+
 @bot.event
 async def on_ready():
     await bot.tree.sync()
